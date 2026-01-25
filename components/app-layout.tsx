@@ -6,7 +6,6 @@ import { CartIcon, CropIcon } from "@shopify/polaris-icons";
 // import { ThemeToggle } from "@/components/theme-toggle";
 import {
   useDisplayMode,
-  useIsChatGptApp,
   useMaxHeight,
   useRequestDisplayMode,
 } from "@/app/hooks";
@@ -22,8 +21,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const displayMode = useDisplayMode();
   const requestDisplayMode = useRequestDisplayMode();
 
-  const isChatGpt = useIsChatGptApp();
-
   const [cart] = useState<Product[]>([]);
 
   const toolInput = { query: "" };
@@ -31,14 +28,10 @@ export default function AppLayout({ children }: PropsWithChildren) {
   return (
     <div
       className="bg-[var(--chatgpt-bg-primary)] font-sans text-[var(--chatgpt-text-primary)]"
-      style={
-        isChatGpt
-          ? {
-              maxHeight,
-              height: displayMode === "fullscreen" ? maxHeight : undefined,
-            }
-          : { minHeight: "100dvh" }
-      }
+      style={{
+        maxHeight,
+        height: displayMode === "fullscreen" ? maxHeight : undefined,
+      }}
     >
       <div className="sticky top-0 z-10 bg-[var(--chatgpt-bg-secondary)] border-b border-[var(--chatgpt-border)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
