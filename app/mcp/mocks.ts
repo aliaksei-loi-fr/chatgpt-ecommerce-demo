@@ -7,6 +7,15 @@ export const ProductSchema = z.object({
   price: z.number().describe("Product price in USD."),
   category: z.string().describe("Product category."),
   image: z.string().describe("Product image URL."),
+  rating: z
+    .number()
+    .min(0)
+    .max(5)
+    .optional()
+    .describe("Product rating out of 5."),
+  pros: z.array(z.string()).optional().describe("Product advantages."),
+  cons: z.array(z.string()).optional().describe("Product disadvantages."),
+  specs: z.record(z.string()).optional().describe("Product specifications."),
 });
 
 export type Product = z.infer<typeof ProductSchema>;
@@ -14,122 +23,192 @@ export type Product = z.infer<typeof ProductSchema>;
 export const products: Product[] = [
   {
     id: "1",
-    name: "Premium Headphones",
+    name: "Urban Commuter Backpack",
     description:
-      "Immersive sound quality with advanced noise cancellation technology. Perfect for music lovers and professionals.",
-    price: 299.99,
+      "Sleek and functional backpack designed for daily commuters. Features a padded laptop sleeve, hidden anti-theft pocket, and water-resistant exterior.",
+    price: 89.99,
     image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
-    category: "Electronics",
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+    category: "Commuter",
+    rating: 4.6,
+    pros: [
+      "Anti-theft hidden pocket",
+      "Water-resistant material",
+      "Comfortable padded straps",
+      "USB charging port",
+    ],
+    cons: [
+      "Limited color options",
+      "No water bottle pocket",
+      "Medium capacity only",
+    ],
+    specs: {
+      Capacity: "22L",
+      Material: "600D Polyester",
+      "Laptop Fit": 'Up to 15.6"',
+      Weight: "0.8kg",
+      Dimensions: "45x30x15cm",
+    },
   },
-  {
-    id: "2",
-    name: "Smart Watch Series X",
-    description:
-      "Stay connected and track your fitness goals with the latest smart watch. Features a sleek design and long battery life.",
-    price: 199.99,
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
-    category: "Electronics",
-  },
+
   {
     id: "3",
-    name: "Classic White Sneakers",
+    name: "Minimalist Daypack",
     description:
-      "Handcrafted leather sneakers that combine style and comfort. A timeless addition to any wardrobe.",
-    price: 129.99,
+      "Ultra-lightweight packable daypack that folds into its own pocket. Ideal for travel and spontaneous adventures.",
+    price: 34.99,
     image:
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
-    category: "Fashion",
+      "https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?w=800&q=80",
+    category: "Travel",
+    rating: 4.3,
+    pros: [
+      "Extremely lightweight (200g)",
+      "Packs into own pocket",
+      "Water-resistant",
+      "Great value",
+    ],
+    cons: ["No laptop sleeve", "Thin shoulder straps", "Limited organization"],
+    specs: {
+      Capacity: "20L",
+      Material: "Ripstop Nylon",
+      "Laptop Fit": "None",
+      Weight: "0.2kg",
+      Dimensions: "44x28x14cm",
+    },
   },
   {
     id: "4",
-    name: "Adventure Backpack",
+    name: "Canvas Heritage Backpack",
     description:
-      "Durable and spacious leather backpack designed for travel and daily commutes. Features multiple compartments.",
-    price: 89.99,
-    image:
-      "https://images.unsplash.com/photo-1509762774605-f07235a08f1f?w=800&q=80",
-    category: "Accessories",
-  },
-  {
-    id: "5",
-    name: "Wireless Earbuds Pro",
-    description:
-      "Crystal-clear audio with deep bass and seamless Bluetooth connectivity. Includes a compact charging case.",
+      "Vintage-inspired waxed canvas backpack with genuine leather accents. Combines classic style with modern functionality.",
     price: 149.99,
     image:
-      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&q=80",
-    category: "Electronics",
+      "https://images.unsplash.com/photo-1509762774605-f07235a08f1f?w=800&q=80",
+    category: "Lifestyle",
+    rating: 4.5,
+    pros: [
+      "Premium waxed canvas",
+      "Genuine leather details",
+      "Timeless aesthetic",
+      "Develops patina over time",
+    ],
+    cons: ["Heavy material", "Requires maintenance", "Not fully waterproof"],
+    specs: {
+      Capacity: "28L",
+      Material: "Waxed Canvas & Leather",
+      "Laptop Fit": 'Up to 15"',
+      Weight: "1.4kg",
+      Dimensions: "48x32x18cm",
+    },
   },
-  {
-    id: "6",
-    name: "Minimalist Desk Lamp",
-    description:
-      "Modern LED desk lamp with adjustable brightness and color temperature. Perfect for home office setups.",
-    price: 59.99,
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=80",
-    category: "Home",
-  },
+
   {
     id: "7",
-    name: "Organic Cotton T-Shirt",
+    name: "Roll-Top Waterproof Pack",
     description:
-      "Soft and breathable organic cotton tee. Available in multiple colors with a relaxed fit.",
-    price: 34.99,
+      "Fully waterproof backpack with roll-top closure. Perfect for cyclists, kayakers, and rainy commutes.",
+    price: 119.99,
     image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
-    category: "Fashion",
+      "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=800&q=80",
+    category: "Outdoor",
+    rating: 4.6,
+    pros: [
+      "100% waterproof (IPX6)",
+      "Welded seams",
+      "Expandable roll-top",
+      "Reflective logos",
+    ],
+    cons: [
+      "Limited organization inside",
+      "Stiff material",
+      "No external pockets",
+    ],
+    specs: {
+      Capacity: "25-30L",
+      Material: "TPU-coated Nylon",
+      "Laptop Fit": 'Up to 15"',
+      Weight: "0.9kg",
+      Dimensions: "50x30x17cm",
+    },
   },
   {
     id: "8",
-    name: "Ceramic Coffee Mug Set",
+    name: "Camera Adventure Pack",
     description:
-      "Set of 4 handcrafted ceramic mugs. Microwave and dishwasher safe with a modern matte finish.",
-    price: 44.99,
+      "Specialized photography backpack with customizable dividers. Quick side access to camera gear with tripod attachment.",
+    price: 169.99,
     image:
-      "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
-    category: "Home",
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=80",
+    category: "Photography",
+    rating: 4.5,
+    pros: [
+      "Customizable dividers",
+      "Quick side access",
+      "Tripod attachment",
+      "Weather-resistant",
+    ],
+    cons: ["Heavy empty weight", "Expensive", "Limited non-camera space"],
+    specs: {
+      Capacity: "32L",
+      Material: "Water-resistant Canvas",
+      "Laptop Fit": 'Up to 15"',
+      Weight: "1.6kg",
+      Dimensions: "48x30x22cm",
+    },
   },
-  {
-    id: "9",
-    name: "Leather Wallet",
-    description:
-      "Slim genuine leather wallet with RFID protection. Features multiple card slots and a bill compartment.",
-    price: 69.99,
-    image:
-      "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&q=80",
-    category: "Accessories",
-  },
+
   {
     id: "10",
-    name: "Yoga Mat Premium",
+    name: "Business Travel 40L",
     description:
-      "Extra thick eco-friendly yoga mat with non-slip surface. Includes a carrying strap for easy transport.",
-    price: 49.99,
+      "Carry-on compliant travel backpack with extensive organization. Opens like a suitcase with compression straps and shoe compartment.",
+    price: 159.99,
     image:
-      "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&q=80",
-    category: "Fitness",
+      "https://images.unsplash.com/photo-1581605405669-fcdf81165afa?w=800&q=80",
+    category: "Travel",
+    rating: 4.8,
+    pros: [
+      "Carry-on compliant",
+      "Clamshell opening",
+      "Shoe compartment",
+      "Compression straps",
+    ],
+    cons: ["Not great for hiking", "Heavy fully loaded", "Pricey"],
+    specs: {
+      Capacity: "40L",
+      Material: "900D Polyester",
+      "Laptop Fit": 'Up to 17"',
+      Weight: "1.5kg",
+      Dimensions: "55x35x22cm",
+    },
   },
   {
     id: "11",
-    name: "Stainless Steel Water Bottle",
+    name: "Eco Recycled Backpack",
     description:
-      "Double-walled insulated bottle keeps drinks cold for 24 hours or hot for 12. BPA-free and leak-proof.",
-    price: 29.99,
+      "Sustainable backpack made from 100% recycled ocean plastics. Eco-conscious design without compromising on features.",
+    price: 99.99,
     image:
-      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&q=80",
-    category: "Fitness",
-  },
-  {
-    id: "12",
-    name: "Portable Bluetooth Speaker",
-    description:
-      "Compact waterproof speaker with 360-degree sound. Perfect for outdoor adventures and pool parties.",
-    price: 79.99,
-    image:
-      "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=800&q=80",
-    category: "Electronics",
+      "https://images.unsplash.com/photo-1585916420730-d7f95e942d43?w=800&q=80",
+    category: "Lifestyle",
+    rating: 4.4,
+    pros: [
+      "Made from recycled materials",
+      "Carbon-neutral production",
+      "Modern design",
+      "Supports ocean cleanup",
+    ],
+    cons: [
+      "Limited color choices",
+      "Slightly less durable",
+      "Higher price for size",
+    ],
+    specs: {
+      Capacity: "24L",
+      Material: "Recycled Ocean Plastic",
+      "Laptop Fit": 'Up to 15"',
+      Weight: "0.7kg",
+      Dimensions: "46x30x16cm",
+    },
   },
 ];
