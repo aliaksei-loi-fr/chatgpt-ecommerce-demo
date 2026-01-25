@@ -1,4 +1,4 @@
-import { baseURL } from "@/baseUrl";
+import { baseURL } from "@/lib/utils";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 

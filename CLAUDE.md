@@ -32,7 +32,7 @@ pnpm tunnel       # Start ngrok tunnel for testing with ChatGPT
 
 - `app/` - Next.js App Router pages and API routes
 - `app/mcp/route.ts` - MCP server endpoint (tools and resources registration)
-- `app/hooks/` - Custom React hooks for OpenAI SDK integration
+- `app/hooks/` - Custom React hooks for OpenAI SDK integwration
 - `components/` - Reusable React components
 - `lib/context/` - React context providers (Theme, Shopify/Polaris)
 
