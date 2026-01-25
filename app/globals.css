@@ -1,26 +1,138 @@
 @import "tailwindcss";
+@import "@shopify/polaris/build/esm/styles.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@tailwind utilities;
+
+/* Mobile-first base styles */
+html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Improve touch targets on mobile */
+@media (max-width: 640px) {
+    button,
+    a {
+        min-height: 44px;
+    }
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* ChatGPT Light Mode Colors */
+:root {
+    --chatgpt-bg-primary: #ffffff;
+    --chatgpt-bg-secondary: #f7f7f8;
+    --chatgpt-bg-tertiary: #ececec;
+    --chatgpt-bg-hover: #e5e5e5;
+    --chatgpt-text-primary: #0d0d0d;
+    --chatgpt-text-secondary: #4a4a4a;
+    --chatgpt-text-muted: #6e6e6e;
+    --chatgpt-accent: #10a37f;
+    --chatgpt-accent-hover: #1a7f64;
+    --chatgpt-border: #d9d9d9;
+    --chatgpt-border-light: #e5e5e5;
+    --chatgpt-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    :root {
+        --chatgpt-bg-primary: #212121;
+        --chatgpt-bg-secondary: #2f2f2f;
+        --chatgpt-bg-tertiary: #424242;
+        --chatgpt-bg-hover: #3a3a3a;
+        --chatgpt-text-primary: #ececec;
+        --chatgpt-text-secondary: #b4b4b4;
+        --chatgpt-text-muted: #8e8e8e;
+        --chatgpt-accent: #10a37f;
+        --chatgpt-accent-hover: #1a7f64;
+        --chatgpt-border: #444444;
+        --chatgpt-border-light: #3a3a3a;
+        --chatgpt-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Override Polaris theme */
+.Polaris-Frame {
+    background-color: var(--chatgpt-bg-primary) !important;
+}
+
+/* Polaris overrides */
+.Polaris-Button--primary {
+    background-color: var(--chatgpt-accent) !important;
+    border-color: var(--chatgpt-accent) !important;
+}
+
+.Polaris-Button--primary:hover {
+    background-color: var(--chatgpt-accent-hover) !important;
+    border-color: var(--chatgpt-accent-hover) !important;
+}
+
+.Polaris-Card {
+    background-color: var(--chatgpt-bg-secondary) !important;
+    border-color: var(--chatgpt-border-light) !important;
+}
+
+.Polaris-Text--root {
+    color: var(--chatgpt-text-primary) !important;
+}
+
+.Polaris-Badge {
+    background-color: var(--chatgpt-bg-tertiary) !important;
+    color: var(--chatgpt-text-primary) !important;
+}
+
+@layer utilities {
+    .overflow-auto > *,
+    .overflow-scroll > *,
+    .overflow-x-auto > *,
+    .overflow-y-auto > * {
+        scrollbar-color: auto;
+    }
+
+    .overflow-auto,
+    .overflow-scroll,
+    .overflow-x-auto,
+    .overflow-y-auto,
+    .overflow-x-scroll,
+    .overflow-y-scroll {
+        scrollbar-color: rgb(0, 0, 0, 0.1) transparent;
+    }
+
+    .dark .overflow-auto,
+    .dark .overflow-scroll,
+    .dark .overflow-x-auto,
+    .dark .overflow-y-auto,
+    .dark .overflow-x-scroll,
+    .dark .overflow-y-scroll {
+        scrollbar-color: rgb(255, 255, 255, 0.1) transparent;
+    }
+
+    .overflow-auto:hover,
+    .overflow-scroll:hover,
+    .overflow-x-auto:hover,
+    .overflow-y-auto:hover {
+        scrollbar-color: rgb(0, 0, 0, 0.2) transparent;
+    }
+
+    .dark .overflow-auto:hover,
+    .dark .overflow-scroll:hover,
+    .dark .overflow-x-auto:hover,
+    .dark .overflow-y-auto:hover {
+        scrollbar-color: rgb(255, 255, 255, 0.2) transparent;
+    }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--chatgpt-bg-primary);
+    color: var(--chatgpt-bg-secondary);
+    font-family: Arial, Helvetica, sans-serif;
 }

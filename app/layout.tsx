@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import enTranslations from "@shopify/polaris/locales/en.json";
+
+import { ThemeProvider } from "@/lib/context/theme";
+import { AppProvider } from "@/lib/context/shopify";
+
 import "./globals.css";
 import { baseURL } from "@/baseUrl";
 
@@ -31,7 +37,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider>
+          <AppProvider i18n={enTranslations}>{children}</AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
@@ -100,12 +108,12 @@ function NextChatSDKBootstrap({ baseUrl }: { baseUrl: string }) {
                     }
                   } catch {
                     console.warn(
-                      "openExternal failed, likely not in OpenAI client"
+                      "openExternal failed, likely not in OpenAI client",
                     );
                   }
                 }
               },
-              true
+              true,
             );
 
             if (isInIframe && window.location.origin !== appOrigin) {

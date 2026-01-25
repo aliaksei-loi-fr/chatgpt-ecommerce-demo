@@ -1,14 +1,22 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
+import { Icon, Text } from "@shopify/polaris";
+import { CartIcon, CropIcon } from "@shopify/polaris-icons";
+
+import { AnimatePresence, motion } from "framer-motion";
+
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
-  useWidgetProps,
-  useMaxHeight,
-  useDisplayMode,
-  useRequestDisplayMode,
-  useIsChatGptApp,
+    useDisplayMode,
+    useIsChatGptApp,
+    useMaxHeight,
+    useRequestDisplayMode,
+    useWidgetProps,
 } from "./hooks";
+
+import ProductGrid from "@/components/product-grid";
+import { useState } from "react";
+import { products, type Product } from "./mcp/mocks";
 
 export default function Home() {
   const toolOutput = useWidgetProps<{
@@ -22,108 +30,145 @@ export default function Home() {
 
   const name = toolOutput?.result?.structuredContent?.name || toolOutput?.name;
 
+  const [view, setView] = useState("products");
+  const [cart, setCart] = useState<Product[]>([]);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const toolInput = { query: "" };
+
+  const topBarMarkup = (
+    <div className="sticky top-0 z-10 bg-[var(--chatgpt-bg-secondary)] border-b border-[var(--chatgpt-border)]">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
+        <button
+          // onClick={() => setView("products")}
+          className="text-lg sm:text-2xl font-black tracking-tighter text-[var(--chatgpt-text-primary)] hover:opacity-80 transition-opacity"
+        >
+          PREMIUM<span className="text-[var(--chatgpt-accent)]">STORE</span>
+        </button>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          {!!toolInput?.query && (
+            <div className="hidden md:block text-sm text-[var(--chatgpt-text-muted)] mr-2">
+              Searching for:{" "}
+              <span className="text-[var(--chatgpt-text-primary)] font-medium">
+                "{toolInput.query}"
+              </span>
+            </div>
+          )}
+          <ThemeToggle />
+          {displayMode !== "fullscreen" && (
+            <button
+              aria-label="Enter fullscreen"
+              className="relative p-2 hover:bg-[var(--chatgpt-bg-hover)] rounded-full transition-colors"
+              onClick={() => requestDisplayMode("fullscreen")}
+            >
+              <Icon source={CropIcon} tone="base" />
+            </button>
+          )}
+          <button
+            // onClick={handleGoToCheckout}
+            className="relative p-2 hover:bg-[var(--chatgpt-bg-hover)] rounded-full transition-colors"
+            aria-label="Cart"
+          >
+            <Icon source={CartIcon} tone="base" />
+            {cart?.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[var(--chatgpt-accent)] text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center ring-2 ring-[var(--chatgpt-bg-secondary)]">
+                {cart.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const footer = (
+    <footer className="mt-12 sm:mt-24 border-t border-[--chatgpt-border] bg-[--chatgpt-bg-secondary] py-6 sm:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 text-center text-[--chatgpt-text-muted] text-xs sm:text-sm">
+        © 2026 Premium Store. All rights reserved.
+      </div>
+    </footer>
+  );
+
+  const handleProductClick = () => {};
+
   return (
     <div
-      className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-8 pb-20 gap-16 sm:p-20"
+      className="bg-[var(--chatgpt-bg-primary)] font-sans text-[var(--chatgpt-text-primary)]"
       style={{
         maxHeight,
         height: displayMode === "fullscreen" ? maxHeight : undefined,
       }}
     >
-      {displayMode !== "fullscreen" && (
-        <button
-          aria-label="Enter fullscreen"
-          className="fixed top-4 right-4 z-50 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-lg ring-1 ring-slate-900/10 dark:ring-white/10 p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          onClick={() => requestDisplayMode("fullscreen")}
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"
-            />
-          </svg>
-        </button>
-      )}
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        {!isChatGptApp && (
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 w-full">
-            <div className="flex items-center gap-3">
-              <svg
-                className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-blue-900 dark:text-blue-100 font-medium">
-                  This app relies on data from a ChatGPT session.
-                </p>
-                <p className="text-sm text-blue-900 dark:text-blue-100 font-medium">
-                  No{" "}
-                  <a
-                    href="https://developers.openai.com/apps-sdk/reference"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:no-underline font-mono bg-blue-100 dark:bg-blue-900 px-1 py-0.5 rounded"
-                  >
-                    window.openai
-                  </a>{" "}
-                  property detected
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Welcome to the ChatGPT Apps SDK Next.js Starter
-          </li>
-          <li className="mb-2 tracking-[-.01em]">
-            Name returned from tool call: {name ?? "..."}
-          </li>
-          <li className="mb-2 tracking-[-.01em]">MCP server path: /mcp</li>
-        </ol>
+      {topBarMarkup}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <Link
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            prefetch={false}
-            href="/custom-page"
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="products"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
           >
-            Visit another page
-          </Link>
-          <a
-            href="https://vercel.com/templates/ai/chatgpt-app-with-next-js"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            Deploy on Vercel
-          </a>
-        </div>
+            <div className="mb-4 sm:mb-8">
+              <Text as="h1" variant="heading2xl">
+                <span className="text-[var(--chatgpt-text-primary)] text-xl sm:text-3xl">
+                  New Arrivals
+                </span>
+              </Text>
+              <p className="text-[var(--chatgpt-text-secondary)] text-sm sm:text-lg mt-1 sm:mt-2">
+                Discover our latest collection of premium goods.
+              </p>
+            </div>
+
+            <ProductGrid
+              products={products}
+              onProductClick={setSelectedProduct}
+            />
+          </motion.div>
+          {/*{view === "detail" && selectedProduct && (
+            <motion.div
+              key="detail"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ProductDetail
+                product={selectedProduct}
+                onAddToCart={handleAddToCart}
+                onBack={handleBack}
+              />
+              {toolMeta && (
+                <div className="max-w-4xl mx-auto mt-4 sm:mt-6 bg-[--chatgpt-bg-secondary] border border-[--chatgpt-border] p-3 sm:p-4 rounded-xl flex justify-around text-xs sm:text-sm font-medium text-[--chatgpt-accent]">
+                  <div>Stock: {toolMeta.stock} units</div>
+                  <div>Rating: {toolMeta.rating}/5.0</div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {view === "checkout" && (
+            <motion.div
+              key="checkout"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Checkout
+                cartItems={cart}
+                onBack={handleBack}
+                onClearCart={handleClearCart}
+              />
+            </motion.div>
+          )}*/}
+        </AnimatePresence>
       </main>
+
+      {footer}
     </div>
   );
 }
