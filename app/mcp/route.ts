@@ -1,5 +1,6 @@
 import { baseURL } from "@/lib/utils";
 import { createMcpHandler } from "mcp-handler";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { products, ProductSchema, type Product } from "./mocks";
 
@@ -40,6 +41,11 @@ const handler = createMcpHandler(async (server) => {
     getAppsSdkCompatibleHtml(baseURL, "/checkout"),
   ]);
 
+  // Helper to fetch details page HTML for a specific product
+  const getDetailsHtml = async (productId: string) => {
+    return getAppsSdkCompatibleHtml(baseURL, `/details/${productId}`);
+  };
+
   // ============================================
   // WIDGET DEFINITIONS
   // ============================================
@@ -58,10 +64,10 @@ const handler = createMcpHandler(async (server) => {
   const productDetailWidget: ContentWidget = {
     id: "get_product_details",
     title: "Product Details",
-    templateUri: "ui://widget/product-detail-template.html",
+    templateUri: "ui://widget/details/{productId}",
     invoking: "Loading product details...",
     invoked: "Product details loaded",
-    html: homeHtml,
+    html: homeHtml, // Fallback, actual HTML is fetched dynamically
     description: "Displays detailed information about a specific product",
     widgetDomain: baseURL,
   };
@@ -146,11 +152,44 @@ const handler = createMcpHandler(async (server) => {
 
   // Register all widget resources
   registerWidget(productsWidget);
-  registerWidget(productDetailWidget);
   registerWidget(searchWidget);
   registerWidget(compareWidget);
   registerWidget(cartWidget);
   registerWidget(categoriesWidget);
+
+  // Register dynamic resource for product details pages
+  server.registerResource(
+    "product_details",
+    new ResourceTemplate("ui://widget/details/{productId}", {
+      list: undefined,
+    }),
+    {
+      title: productDetailWidget.title,
+      description: productDetailWidget.description,
+      mimeType: "text/html+skybridge",
+      _meta: {
+        "openai/widgetDescription": productDetailWidget.description,
+        "openai/widgetPrefersBorder": true,
+      },
+    },
+    async (uri, { productId }) => {
+      const detailsHtml = await getDetailsHtml(productId as string);
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "text/html+skybridge",
+            text: `<html>${detailsHtml}</html>`,
+            _meta: {
+              "openai/widgetDescription": productDetailWidget.description,
+              "openai/widgetPrefersBorder": true,
+              "openai/widgetDomain": productDetailWidget.widgetDomain,
+            },
+          },
+        ],
+      };
+    },
+  );
 
   // ============================================
   // TOOL: list_products
@@ -285,7 +324,13 @@ const handler = createMcpHandler(async (server) => {
         structuredContent: {
           product,
         },
-        _meta: widgetMeta(productDetailWidget),
+        _meta: {
+          "openai/outputTemplate": `ui://widget/details/${productId}`,
+          "openai/toolInvocation/invoking": productDetailWidget.invoking,
+          "openai/toolInvocation/invoked": productDetailWidget.invoked,
+          "openai/widgetAccessible": false,
+          "openai/resultCanProduceWidget": true,
+        },
       };
     },
   );
