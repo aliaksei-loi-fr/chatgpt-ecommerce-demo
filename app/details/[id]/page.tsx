@@ -3,26 +3,73 @@
 import { motion } from "framer-motion";
 import { Text, Badge, BlockStack, InlineStack, Icon } from "@shopify/polaris";
 import { ArrowLeftIcon, HeartIcon } from "@shopify/polaris-icons";
-import { products, type Product } from "@/app/mcp/mocks";
-import { useRouter, useSearchParams } from "next/navigation";
+import { products as mockProducts, type Product } from "@/app/mcp/mocks";
+import { useRouter } from "next/navigation";
 import { redirect } from "next/navigation";
 import { useParams } from "next/navigation";
+import {
+  useWidgetProps,
+  useIsChatGptApp,
+  useCallTool,
+  useSendMessage,
+} from "@/app/hooks";
+import { useState } from "react";
+
+interface WidgetProps extends Record<string, unknown> {
+  product?: Product;
+}
 
 export default function DetailsPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const isChatGptApp = useIsChatGptApp();
+  const callTool = useCallTool();
+  const sendMessage = useSendMessage();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  const product: Product | undefined = products.find(
-    ({ id }) => id === params.id,
-  );
+  // Get product from MCP tool output when in ChatGPT, fallback to mocks
+  const widgetProps = useWidgetProps<WidgetProps>({});
+  const product: Product | undefined =
+    isChatGptApp && widgetProps.product
+      ? widgetProps.product
+      : mockProducts.find(({ id }) => id === params.id);
 
   if (!product) redirect("/");
 
-  const onAddToCart = (product: Product) => {
-    console.log({ product });
+  const onAddToCart = async (product: Product) => {
+    if (isChatGptApp) {
+      setIsAddingToCart(true);
+      try {
+        await callTool("add_to_cart", { productId: product.id, quantity: 1 });
+      } finally {
+        setIsAddingToCart(false);
+      }
+    } else {
+      console.log("Added to cart:", product);
+    }
   };
 
-  const onBack = () => router.push("/");
+  const onViewCart = async () => {
+    if (isChatGptApp) {
+      await callTool("get_cart", {});
+    } else {
+      router.push("/checkout");
+    }
+  };
+
+  const onBack = async () => {
+    if (isChatGptApp) {
+      await callTool("list_products", {});
+    } else {
+      router.push("/");
+    }
+  };
+
+  const onAddToWishlist = async () => {
+    if (isChatGptApp) {
+      await sendMessage(`Add ${product.name} to my wishlist`);
+    }
+  };
 
   return (
     <motion.div
@@ -72,17 +119,66 @@ export default function DetailsPage() {
                 </span>
               </Text>
 
-              <Text as="p" variant="headingLg">
-                <span className="text-[var(--chatgpt-accent)] font-bold">
-                  ${product.price}
-                </span>
-              </Text>
+              <div className="flex items-center gap-3">
+                <Text as="p" variant="headingLg">
+                  <span className="text-[var(--chatgpt-accent)] font-bold">
+                    ${product.price}
+                  </span>
+                </Text>
+                {product.rating && (
+                  <span className="text-sm text-[var(--chatgpt-text-secondary)]">
+                    {"★".repeat(Math.floor(product.rating))} {product.rating}/5
+                  </span>
+                )}
+              </div>
 
               <Text as="p" variant="bodyMd">
                 <span className="text-[var(--chatgpt-text-secondary)] leading-relaxed">
                   {product.description}
                 </span>
               </Text>
+
+              {product.pros && product.pros.length > 0 && (
+                <div className="mt-2">
+                  <Text as="p" variant="bodyMd">
+                    <span className="text-green-600 font-medium">Pros:</span>
+                  </Text>
+                  <ul className="mt-1 space-y-1">
+                    {product.pros.slice(0, 3).map((pro, i) => (
+                      <li
+                        key={i}
+                        className="text-sm text-[var(--chatgpt-text-secondary)] flex items-start gap-1"
+                      >
+                        <span className="text-green-600">+</span> {pro}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {product.specs && Object.keys(product.specs).length > 0 && (
+                <div className="mt-2 p-3 bg-[var(--chatgpt-bg-tertiary)] rounded-lg">
+                  <Text as="p" variant="bodyMd">
+                    <span className="font-medium text-[var(--chatgpt-text-primary)]">
+                      Specifications:
+                    </span>
+                  </Text>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {Object.entries(product.specs)
+                      .slice(0, 4)
+                      .map(([key, value]) => (
+                        <div key={key} className="text-sm">
+                          <span className="text-[var(--chatgpt-text-muted)]">
+                            {key}:
+                          </span>{" "}
+                          <span className="text-[var(--chatgpt-text-primary)]">
+                            {value}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </BlockStack>
           </motion.div>
 
@@ -94,14 +190,34 @@ export default function DetailsPage() {
           >
             <button
               onClick={() => onAddToCart(product)}
-              className="flex-1 bg-[var(--chatgpt-accent)] text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-[var(--chatgpt-accent-hover)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isAddingToCart}
+              className="flex-1 bg-[var(--chatgpt-accent)] text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:bg-[var(--chatgpt-accent-hover)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add to Cart
+              {isAddingToCart ? "Adding..." : "Add to Cart"}
             </button>
-            <button className="px-4 sm:px-6 py-3 sm:py-4 border border-[var(--chatgpt-border)] rounded-lg sm:rounded-xl hover:bg-[var(--chatgpt-bg-hover)] transition-colors text-[var(--chatgpt-text-primary)]">
+            <button
+              onClick={onAddToWishlist}
+              className="px-4 sm:px-6 py-3 sm:py-4 border border-[var(--chatgpt-border)] rounded-lg sm:rounded-xl hover:bg-[var(--chatgpt-bg-hover)] transition-colors text-[var(--chatgpt-text-primary)]"
+            >
               <Icon source={HeartIcon} tone="base" />
             </button>
           </motion.div>
+
+          {isChatGptApp && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+              className="mt-3"
+            >
+              <button
+                onClick={onViewCart}
+                className="w-full py-2 text-sm border border-[var(--chatgpt-border)] rounded-lg hover:bg-[var(--chatgpt-bg-hover)] transition-colors text-[var(--chatgpt-text-primary)]"
+              >
+                View Cart
+              </button>
+            </motion.div>
+          )}
 
           <motion.div
             initial={{ opacity: 0 }}

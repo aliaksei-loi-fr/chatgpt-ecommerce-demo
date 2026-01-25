@@ -1,11 +1,31 @@
 "use client";
 
-import { products, type Product } from "@/app/mcp/mocks";
+import { products as mockProducts, type Product } from "@/app/mcp/mocks";
 import { Badge, Icon, Text } from "@shopify/polaris";
 import { ArrowLeftIcon, XIcon } from "@shopify/polaris-icons";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
+import {
+  useWidgetProps,
+  useWidgetState,
+  useIsChatGptApp,
+  useCallTool,
+} from "@/app/hooks";
+
+interface CompareWidgetProps extends Record<string, unknown> {
+  products?: Product[];
+  insights?: {
+    bestValue?: { id: string; name: string };
+    highestRated?: { id: string; name: string; rating?: number };
+    lowestPrice?: { id: string; name: string; price: number };
+  };
+  priceRange?: { min: number; max: number };
+}
+
+interface CompareWidgetState extends Record<string, unknown> {
+  selectedIds: string[];
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -34,14 +54,14 @@ function StarRating({ rating }: { rating: number }) {
 function CompareCard({
   product,
   onRemove,
+  onViewDetails,
   compact = false,
 }: {
   product: Product;
   onRemove: () => void;
+  onViewDetails: () => void;
   compact?: boolean;
 }) {
-  const router = useRouter();
-
   if (compact) {
     return (
       <motion.div
@@ -111,7 +131,7 @@ function CompareCard({
         </Text>
         {product.rating && <StarRating rating={product.rating} />}
         <button
-          onClick={() => router.push(`/details/${product.id}`)}
+          onClick={onViewDetails}
           className="mt-2 sm:mt-3 w-full py-1.5 sm:py-2 text-xs sm:text-sm border border-[var(--chatgpt-border)] rounded-lg hover:bg-[var(--chatgpt-bg-hover)] transition-colors text-[var(--chatgpt-text-primary)]"
         >
           View Details
@@ -281,17 +301,44 @@ function ProsConsRow({
 function ComparePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isChatGptApp = useIsChatGptApp();
+  const callTool = useCallTool();
+
+  // Get comparison data from MCP tool output when in ChatGPT
+  const widgetProps = useWidgetProps<CompareWidgetProps>({});
+
+  // Use widget state for persistent selection in ChatGPT
+  const [widgetState, setWidgetState] = useWidgetState<CompareWidgetState>({
+    selectedIds: [],
+  });
 
   const initialIds = searchParams.get("ids")?.split(",").filter(Boolean) ?? [];
-  const [selectedIds, setSelectedIds] = useState<string[]>(
+
+  // Local state for non-ChatGPT mode
+  const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(
     initialIds.length > 0 ? initialIds : [],
   );
   const [showSelector, setShowSelector] = useState(initialIds.length === 0);
 
-  const selectedProducts = useMemo(
-    () => products.filter((p) => selectedIds.includes(p.id)),
-    [selectedIds],
-  );
+  // Use widget state in ChatGPT, local state otherwise
+  const selectedIds = isChatGptApp
+    ? (widgetState?.selectedIds ?? [])
+    : localSelectedIds;
+
+  // If MCP returns products, use them directly
+  const selectedProducts = useMemo(() => {
+    if (
+      isChatGptApp &&
+      widgetProps.products &&
+      widgetProps.products.length > 0
+    ) {
+      return widgetProps.products;
+    }
+    return mockProducts.filter((p) => selectedIds.includes(p.id));
+  }, [isChatGptApp, widgetProps.products, selectedIds]);
+
+  // Available products for selection
+  const availableProducts = mockProducts;
 
   const allSpecs = useMemo(() => {
     const specs = new Set<string>();
@@ -304,17 +351,78 @@ function ComparePageContent() {
   }, [selectedProducts]);
 
   const toggleProduct = (id: string) => {
-    setSelectedIds((prev) =>
+    const updateIds = (prev: string[]) =>
       prev.includes(id)
         ? prev.filter((i) => i !== id)
         : prev.length < 4
           ? [...prev, id]
-          : prev,
-    );
+          : prev;
+
+    if (isChatGptApp) {
+      setWidgetState((prev) => ({
+        ...prev,
+        selectedIds: updateIds(prev?.selectedIds ?? []),
+      }));
+    } else {
+      setLocalSelectedIds(updateIds);
+    }
   };
 
   const removeProduct = (id: string) => {
-    setSelectedIds((prev) => prev.filter((i) => i !== id));
+    if (isChatGptApp) {
+      setWidgetState((prev) => ({
+        ...prev,
+        selectedIds: (prev?.selectedIds ?? []).filter((i) => i !== id),
+      }));
+    } else {
+      setLocalSelectedIds((prev) => prev.filter((i) => i !== id));
+    }
+  };
+
+  const handleCompare = async () => {
+    if (isChatGptApp && selectedIds.length >= 2) {
+      await callTool("compare_products", { productIds: selectedIds });
+    }
+  };
+
+  const handleViewDetails = async (productId: string) => {
+    if (isChatGptApp) {
+      await callTool("get_product_details", { productId });
+    } else {
+      router.push(`/details/${productId}`);
+    }
+  };
+
+  const handleBack = async () => {
+    if (isChatGptApp) {
+      await callTool("list_products", {});
+    } else {
+      router.push("/");
+    }
+  };
+
+  // Get insights from MCP or calculate locally
+  const insights = widgetProps.insights ?? {
+    bestValue:
+      selectedProducts.length > 0
+        ? selectedProducts.reduce((best, p) =>
+            (p.rating ?? 0) / p.price > (best.rating ?? 0) / best.price
+              ? p
+              : best,
+          )
+        : undefined,
+    highestRated:
+      selectedProducts.length > 0
+        ? selectedProducts.reduce((best, p) =>
+            (p.rating ?? 0) > (best.rating ?? 0) ? p : best,
+          )
+        : undefined,
+    lowestPrice:
+      selectedProducts.length > 0
+        ? selectedProducts.reduce((lowest, p) =>
+            p.price < lowest.price ? p : lowest,
+          )
+        : undefined,
   };
 
   return (
@@ -325,7 +433,7 @@ function ComparePageContent() {
         className="mb-4 sm:mb-6"
       >
         <button
-          onClick={() => router.push("/")}
+          onClick={handleBack}
           className="flex items-center gap-2 text-xs sm:text-sm text-[var(--chatgpt-text-secondary)] hover:text-[var(--chatgpt-text-primary)] transition-colors"
         >
           <Icon source={ArrowLeftIcon} tone="base" />
@@ -344,12 +452,22 @@ function ComparePageContent() {
             Compare Products
           </span>
         </Text>
-        <button
-          onClick={() => setShowSelector(!showSelector)}
-          className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors self-start sm:self-auto"
-        >
-          {showSelector ? "Hide Selector" : "Add Products"}
-        </button>
+        <div className="flex gap-2">
+          {isChatGptApp && selectedIds.length >= 2 && (
+            <button
+              onClick={handleCompare}
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Compare ({selectedIds.length})
+            </button>
+          )}
+          <button
+            onClick={() => setShowSelector(!showSelector)}
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors self-start sm:self-auto"
+          >
+            {showSelector ? "Hide Selector" : "Add Products"}
+          </button>
+        </div>
       </motion.div>
 
       {showSelector && (
@@ -360,7 +478,7 @@ function ComparePageContent() {
           className="mb-4 sm:mb-6 bg-[var(--chatgpt-bg-secondary)] rounded-lg sm:rounded-xl border border-[var(--chatgpt-border-light)] p-3 sm:p-4"
         >
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 max-h-[250px] sm:max-h-[300px] overflow-y-auto">
-            {products.map((product) => (
+            {availableProducts.map((product) => (
               <label
                 key={product.id}
                 className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
@@ -436,6 +554,7 @@ function ComparePageContent() {
                 key={product.id}
                 product={product}
                 onRemove={() => removeProduct(product.id)}
+                onViewDetails={() => handleViewDetails(product.id)}
                 compact
               />
             ))}
@@ -453,6 +572,7 @@ function ComparePageContent() {
                 key={product.id}
                 product={product}
                 onRemove={() => removeProduct(product.id)}
+                onViewDetails={() => handleViewDetails(product.id)}
               />
             ))}
           </motion.div>
@@ -535,14 +655,7 @@ function ComparePageContent() {
                   </Text>
                   <Text as="p" variant="bodyMd">
                     <span className="text-[var(--chatgpt-text-primary)] font-semibold text-sm sm:text-base truncate block">
-                      {
-                        selectedProducts.reduce((best, p) =>
-                          (p.rating ?? 0) / p.price >
-                          (best.rating ?? 0) / best.price
-                            ? p
-                            : best,
-                        ).name
-                      }
+                      {insights.bestValue?.name ?? "-"}
                     </span>
                   </Text>
                 </div>
@@ -554,11 +667,7 @@ function ComparePageContent() {
                   </Text>
                   <Text as="p" variant="bodyMd">
                     <span className="text-[var(--chatgpt-text-primary)] font-semibold text-sm sm:text-base truncate block">
-                      {
-                        selectedProducts.reduce((best, p) =>
-                          (p.rating ?? 0) > (best.rating ?? 0) ? p : best,
-                        ).name
-                      }
+                      {insights.highestRated?.name ?? "-"}
                     </span>
                   </Text>
                 </div>
@@ -570,11 +679,7 @@ function ComparePageContent() {
                   </Text>
                   <Text as="p" variant="bodyMd">
                     <span className="text-[var(--chatgpt-text-primary)] font-semibold text-sm sm:text-base truncate block">
-                      {
-                        selectedProducts.reduce((best, p) =>
-                          p.price < best.price ? p : best,
-                        ).name
-                      }
+                      {insights.lowestPrice?.name ?? "-"}
                     </span>
                   </Text>
                 </div>
