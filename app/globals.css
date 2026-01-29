@@ -131,8 +131,9 @@ html {
     }
 }
 
+html,
 body {
     background: var(--chatgpt-bg-primary);
-    color: var(--chatgpt-bg-secondary);
+    color: var(--chatgpt-text-primary);
     font-family: Arial, Helvetica, sans-serif;
 }

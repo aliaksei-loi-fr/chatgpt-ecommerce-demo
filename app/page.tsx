@@ -9,7 +9,7 @@ import { products as mockProducts, type Product } from "./mcp/mocks";
 import {
   useWidgetProps,
   useIsChatGptApp,
-  useSendMessage,
+  // useSendMessage,
   useCallTool,
 } from "./hooks";
 
@@ -28,7 +28,7 @@ interface WidgetProps extends Record<string, unknown> {
 export default function Home() {
   const router = useRouter();
   const isChatGptApp = useIsChatGptApp();
-  const sendMessage = useSendMessage();
+  // const sendMessage = useSendMessage();
   const callTool = useCallTool();
 
   const widgetProps = useWidgetProps<WidgetProps>({ products: [] });
@@ -47,20 +47,15 @@ export default function Home() {
       // await sendMessage(
       //   `Show me details for product "${product.name}" (ID: ${product.id})`,
       // );
-    } else {
-      router.push(`/details/${product.id}`);
     }
+
+    router.push(`/details/${product.id}`);
   };
 
   const handleCompareClick = async () => {
-    // if (isChatGptApp) {
-    // const result = await callTool("get_product_details", {});
+    if (isChatGptApp) await callTool("get_product_details", {});
 
-    // console.log({ result });
-    // await sendMessage("Show me products to compare");
-    // } else {
     router.push("/compare");
-    // }
   };
 
   return (
