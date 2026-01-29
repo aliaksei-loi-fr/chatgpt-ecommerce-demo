@@ -159,7 +159,7 @@ const handler = createMcpHandler(async (server) => {
 
   // Register dynamic resource for product details pages
   server.registerResource(
-    "product_details",
+    productDetailWidget.id,
     new ResourceTemplate("ui://widget/details/{productId}", {
       list: undefined,
     }),
