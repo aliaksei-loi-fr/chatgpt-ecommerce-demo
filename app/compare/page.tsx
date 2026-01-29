@@ -10,7 +10,7 @@ import {
   useWidgetProps,
   useWidgetState,
   useIsChatGptApp,
-  useCallTool,
+  useSendMessage,
 } from "@/app/hooks";
 
 interface CompareWidgetProps extends Record<string, unknown> {
@@ -302,7 +302,7 @@ function ComparePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isChatGptApp = useIsChatGptApp();
-  const callTool = useCallTool();
+  const sendMessage = useSendMessage();
 
   // Get comparison data from MCP tool output when in ChatGPT
   const widgetProps = useWidgetProps<CompareWidgetProps>({});
@@ -381,13 +381,13 @@ function ComparePageContent() {
 
   const handleCompare = async () => {
     if (isChatGptApp && selectedIds.length >= 2) {
-      await callTool("compare_products", { productIds: selectedIds });
+      await sendMessage(`Compare products with IDs: ${selectedIds.join(", ")}`);
     }
   };
 
   const handleViewDetails = async (productId: string) => {
     if (isChatGptApp) {
-      await callTool("get_product_details", { productId });
+      await sendMessage(`Show me details for product ID: ${productId}`);
     } else {
       router.push(`/details/${productId}`);
     }
@@ -395,7 +395,7 @@ function ComparePageContent() {
 
   const handleBack = async () => {
     if (isChatGptApp) {
-      await callTool("list_products", {});
+      await sendMessage("Show me all products");
     } else {
       router.push("/");
     }

@@ -7,12 +7,7 @@ import { products as mockProducts, type Product } from "@/app/mcp/mocks";
 import { useRouter } from "next/navigation";
 import { redirect } from "next/navigation";
 import { useParams } from "next/navigation";
-import {
-  useWidgetProps,
-  useIsChatGptApp,
-  useCallTool,
-  useSendMessage,
-} from "@/app/hooks";
+import { useWidgetProps, useIsChatGptApp, useSendMessage } from "@/app/hooks";
 import { useState } from "react";
 
 interface WidgetProps extends Record<string, unknown> {
@@ -23,7 +18,6 @@ export default function DetailsPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const isChatGptApp = useIsChatGptApp();
-  const callTool = useCallTool();
   const sendMessage = useSendMessage();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
@@ -40,7 +34,9 @@ export default function DetailsPage() {
     if (isChatGptApp) {
       setIsAddingToCart(true);
       try {
-        await callTool("add_to_cart", { productId: product.id, quantity: 1 });
+        await sendMessage(
+          `Add "${product.name}" (ID: ${product.id}) to my cart`,
+        );
       } finally {
         setIsAddingToCart(false);
       }
@@ -51,7 +47,7 @@ export default function DetailsPage() {
 
   const onViewCart = async () => {
     if (isChatGptApp) {
-      await callTool("get_cart", {});
+      await sendMessage("Show my shopping cart");
     } else {
       router.push("/checkout");
     }
@@ -59,7 +55,7 @@ export default function DetailsPage() {
 
   const onBack = async () => {
     if (isChatGptApp) {
-      await callTool("list_products", {});
+      await sendMessage("Show me all products");
     } else {
       router.push("/");
     }

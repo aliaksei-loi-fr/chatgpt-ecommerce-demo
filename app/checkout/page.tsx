@@ -7,12 +7,7 @@ import { Text, Icon } from "@shopify/polaris";
 import { ArrowLeftIcon, CartIcon, DeleteIcon } from "@shopify/polaris-icons";
 
 import type { Product } from "@/app/mcp/mocks";
-import {
-  useWidgetProps,
-  useIsChatGptApp,
-  useCallTool,
-  useSendMessage,
-} from "@/app/hooks";
+import { useWidgetProps, useIsChatGptApp, useSendMessage } from "@/app/hooks";
 import { useState } from "react";
 
 interface CartItem {
@@ -34,7 +29,6 @@ interface CartWidgetProps extends Record<string, unknown> {
 
 export default function CheckoutPage() {
   const isChatGptApp = useIsChatGptApp();
-  const callTool = useCallTool();
   const sendMessage = useSendMessage();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -53,7 +47,7 @@ export default function CheckoutPage() {
 
   const handleRemoveItem = async (productId: string) => {
     if (isChatGptApp) {
-      await callTool("remove_from_cart", { productId });
+      await sendMessage(`Remove product ID: ${productId} from my cart`);
     }
   };
 
@@ -63,11 +57,11 @@ export default function CheckoutPage() {
   ) => {
     if (isChatGptApp) {
       if (newQuantity <= 0) {
-        await callTool("remove_from_cart", { productId });
+        await sendMessage(`Remove product ID: ${productId} from my cart`);
       } else {
-        // Remove and re-add with new quantity
-        await callTool("remove_from_cart", { productId });
-        await callTool("add_to_cart", { productId, quantity: newQuantity });
+        await sendMessage(
+          `Update quantity of product ID: ${productId} to ${newQuantity}`,
+        );
       }
     }
   };
@@ -76,7 +70,7 @@ export default function CheckoutPage() {
     if (isChatGptApp) {
       setIsProcessing(true);
       try {
-        await callTool("clear_cart", {});
+        await sendMessage("Clear my shopping cart");
       } finally {
         setIsProcessing(false);
       }
@@ -87,9 +81,8 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     try {
       if (isChatGptApp) {
-        await callTool("clear_cart", {});
         await sendMessage(
-          "I just placed my order! Thank you for helping me shop.",
+          "Place my order and clear the cart. Thank you for helping me shop!",
         );
       } else {
         alert("Thank you for your order!");
@@ -101,13 +94,13 @@ export default function CheckoutPage() {
 
   const handleBackToProducts = async () => {
     if (isChatGptApp) {
-      await callTool("list_products", {});
+      await sendMessage("Show me all products");
     }
   };
 
   const handleContinueShopping = async () => {
     if (isChatGptApp) {
-      await callTool("list_products", {});
+      await sendMessage("Show me all products");
     }
   };
 
