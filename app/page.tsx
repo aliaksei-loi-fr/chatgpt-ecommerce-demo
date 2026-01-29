@@ -57,7 +57,7 @@ export default function Home() {
   const handleCompare = () => {
     if (isChatGptApp) {
       startTransition(async () => {
-        await sendMessage("Open compare page");
+        await sendMessage("Open compare page with 2 random products");
       });
 
       return;

@@ -251,7 +251,7 @@ const handler = createMcpHandler(async (server) => {
     {
       title: compareWidget.title,
       description:
-        "Compare multiple products side by side with detailed specs, pros, cons, and pricing analysis. Max 4 products.",
+        "Compare multiple products side by side with detailed specs, pros, cons, and pricing analysis. Array of 2-4 product IDs to compare",
       inputSchema: {
         productIds: z
           .array(z.string())

@@ -312,15 +312,15 @@ function ComparePageContent() {
 
   const initialIds = searchParams.get("ids")?.split(",").filter(Boolean) ?? [];
 
-  if (widgetProps === undefined) {
-    return <PageLoader />;
-  }
-
-  // Local state for non-ChatGPT mode
+  // Local state for non-ChatGPT mode - must be called before any conditional returns
   const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(
     initialIds.length > 0 ? initialIds : [],
   );
   const [showSelector, setShowSelector] = useState(initialIds.length === 0);
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
 
   // Use widget state in ChatGPT, local state otherwise
   const selectedIds = isChatGptApp
