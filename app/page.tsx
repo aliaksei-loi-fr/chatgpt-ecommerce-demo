@@ -6,7 +6,12 @@ import { ChartHistogramGrowthIcon } from "@shopify/polaris-icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { products as mockProducts, type Product } from "./mcp/mocks";
-import { useWidgetProps, useIsChatGptApp, useSendMessage } from "./hooks";
+import {
+  useWidgetProps,
+  useIsChatGptApp,
+  useSendMessage,
+  useCallTool,
+} from "./hooks";
 
 interface WidgetProps extends Record<string, unknown> {
   products?: Product[];
@@ -24,8 +29,8 @@ export default function Home() {
   const router = useRouter();
   const isChatGptApp = useIsChatGptApp();
   const sendMessage = useSendMessage();
+  const callTool = useCallTool();
 
-  // Get products from MCP tool output when in ChatGPT, fallback to mocks
   const widgetProps = useWidgetProps<WidgetProps>({ products: [] });
   const products =
     isChatGptApp && widgetProps.products && widgetProps.products.length > 0
@@ -34,20 +39,26 @@ export default function Home() {
 
   const handleProductClick = async (product: Product) => {
     if (isChatGptApp) {
-      await sendMessage(
-        `Show me details for product "${product.name}" (ID: ${product.id})`,
-      );
+      const res = callTool("get_product_details", { productId: product.id });
+
+      console.log("res", res);
+      // await sendMessage(
+      //   `Show me details for product "${product.name}" (ID: ${product.id})`,
+      // );
     } else {
       router.push(`/details/${product.id}`);
     }
   };
 
   const handleCompareClick = async () => {
-    if (isChatGptApp) {
-      await sendMessage("Show me products to compare");
-    } else {
-      router.push("/compare");
-    }
+    // if (isChatGptApp) {
+    // const result = await callTool("get_product_details", {});
+
+    // console.log({ result });
+    // await sendMessage("Show me products to compare");
+    // } else {
+    router.push("/compare");
+    // }
   };
 
   return (
