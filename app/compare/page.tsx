@@ -318,14 +318,14 @@ function ComparePageContent() {
   );
   const [showSelector, setShowSelector] = useState(initialIds.length === 0);
 
-  if (widgetProps === undefined) {
-    return <PageLoader />;
-  }
-
   // Use widget state in ChatGPT, local state otherwise
   const selectedIds = isChatGptApp
     ? (widgetState?.selectedIds ?? [])
     : localSelectedIds;
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
 
   // If MCP returns products, use them directly
   const selectedProducts = useMemo(() => {
@@ -339,18 +339,19 @@ function ComparePageContent() {
     return mockProducts.filter((p) => selectedIds.includes(p.id));
   }, [isChatGptApp, widgetProps.products, selectedIds]);
 
-  // Available products for selection
-  const availableProducts = mockProducts;
-
-  const allSpecs = useMemo(() => {
+  const allSpecs = () => {
     const specs = new Set<string>();
+
     selectedProducts.forEach((p) => {
       if (p.specs) {
         Object.keys(p.specs).forEach((key) => specs.add(key));
       }
     });
     return Array.from(specs);
-  }, [selectedProducts]);
+  };
+
+  // Available products for selection
+  const availableProducts = mockProducts;
 
   const toggleProduct = (id: string) => {
     const updateIds = (prev: string[]) =>
