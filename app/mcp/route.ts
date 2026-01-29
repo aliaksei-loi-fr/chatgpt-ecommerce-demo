@@ -30,25 +30,18 @@ function widgetMeta(widget: ContentWidget) {
   } as const;
 }
 
-// In-memory cart storage (would be per-session in production)
 const cart: Map<string, { product: Product; quantity: number }> = new Map();
 
 const handler = createMcpHandler(async (server) => {
-  // Fetch HTML templates for different pages
   const [homeHtml, compareHtml, checkoutHtml] = await Promise.all([
     getAppsSdkCompatibleHtml(baseURL, "/"),
     getAppsSdkCompatibleHtml(baseURL, "/compare"),
     getAppsSdkCompatibleHtml(baseURL, "/checkout"),
   ]);
 
-  // Helper to fetch details page HTML for a specific product
   const getDetailsHtml = async (productId: string) => {
     return getAppsSdkCompatibleHtml(baseURL, `/details/${productId}`);
   };
-
-  // ============================================
-  // WIDGET DEFINITIONS
-  // ============================================
 
   const productsWidget: ContentWidget = {
     id: "list_products",
@@ -67,19 +60,8 @@ const handler = createMcpHandler(async (server) => {
     templateUri: "ui://widget/details/{productId}",
     invoking: "Loading product details...",
     invoked: "Product details loaded",
-    html: homeHtml, // Fallback, actual HTML is fetched dynamically
-    description: "Displays detailed information about a specific product",
-    widgetDomain: baseURL,
-  };
-
-  const searchWidget: ContentWidget = {
-    id: "search_products",
-    title: "Search Products",
-    templateUri: "ui://widget/search-template.html",
-    invoking: "Searching products...",
-    invoked: "Search complete",
     html: homeHtml,
-    description: "Search products by keyword",
+    description: "Displays detailed information about a specific product",
     widgetDomain: baseURL,
   };
 
@@ -104,21 +86,6 @@ const handler = createMcpHandler(async (server) => {
     description: "Displays the shopping cart contents",
     widgetDomain: baseURL,
   };
-
-  const categoriesWidget: ContentWidget = {
-    id: "get_categories",
-    title: "Product Categories",
-    templateUri: "ui://widget/categories-template.html",
-    invoking: "Loading categories...",
-    invoked: "Categories loaded",
-    html: homeHtml,
-    description: "Displays available product categories",
-    widgetDomain: baseURL,
-  };
-
-  // ============================================
-  // REGISTER RESOURCES
-  // ============================================
 
   const registerWidget = (widget: ContentWidget) => {
     server.registerResource(
@@ -150,14 +117,10 @@ const handler = createMcpHandler(async (server) => {
     );
   };
 
-  // Register all widget resources
   registerWidget(productsWidget);
-  registerWidget(searchWidget);
   registerWidget(compareWidget);
   registerWidget(cartWidget);
-  registerWidget(categoriesWidget);
 
-  // Register dynamic resource for product details pages
   server.registerResource(
     productDetailWidget.id,
     new ResourceTemplate("ui://widget/details/{productId}", {
@@ -174,6 +137,7 @@ const handler = createMcpHandler(async (server) => {
     },
     async (uri, { productId }) => {
       const detailsHtml = await getDetailsHtml(productId as string);
+
       return {
         contents: [
           {
@@ -191,9 +155,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: list_products
-  // ============================================
   server.registerTool(
     productsWidget.id,
     {
@@ -225,14 +186,12 @@ const handler = createMcpHandler(async (server) => {
     async ({ category, minPrice, maxPrice, sortBy, limit }) => {
       let filteredProducts = [...products];
 
-      // Apply category filter
       if (category) {
         filteredProducts = filteredProducts.filter(
           (p) => p.category.toLowerCase() === category.toLowerCase(),
         );
       }
 
-      // Apply price filters
       if (minPrice !== undefined) {
         filteredProducts = filteredProducts.filter((p) => p.price >= minPrice);
       }
@@ -240,7 +199,6 @@ const handler = createMcpHandler(async (server) => {
         filteredProducts = filteredProducts.filter((p) => p.price <= maxPrice);
       }
 
-      // Apply sorting
       if (sortBy) {
         switch (sortBy) {
           case "price_asc":
@@ -258,7 +216,6 @@ const handler = createMcpHandler(async (server) => {
         }
       }
 
-      // Apply limit
       if (limit && limit > 0) {
         filteredProducts = filteredProducts.slice(0, limit);
       }
@@ -280,9 +237,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: get_product_details
-  // ============================================
   server.registerTool(
     productDetailWidget.id,
     {
@@ -294,7 +248,10 @@ const handler = createMcpHandler(async (server) => {
           .string()
           .describe("The unique ID of the product to retrieve"),
       },
-      _meta: widgetMeta(productDetailWidget),
+      _meta: {
+        "openai/toolInvocation/invoking": productDetailWidget.invoking,
+        "openai/toolInvocation/invoked": productDetailWidget.invoked,
+      },
     },
     async ({ productId }) => {
       const product = products.find((p) => p.id === productId);
@@ -335,60 +292,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: search_products
-  // ============================================
-  server.registerTool(
-    searchWidget.id,
-    {
-      title: searchWidget.title,
-      description:
-        "Search products by keyword in name, description, or category",
-      inputSchema: {
-        query: z
-          .string()
-          .describe(
-            "Search keyword to find in product name, description, or category",
-          ),
-        limit: z
-          .number()
-          .optional()
-          .describe("Maximum number of results to return (default: 10)"),
-      },
-      _meta: widgetMeta(searchWidget),
-    },
-    async ({ query, limit = 10 }) => {
-      const lowerQuery = query.toLowerCase();
-      const results = products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(lowerQuery) ||
-          p.description.toLowerCase().includes(lowerQuery) ||
-          p.category.toLowerCase().includes(lowerQuery),
-      );
-
-      const limitedResults = results.slice(0, limit);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Found ${results.length} products matching "${query}"${results.length > limit ? ` (showing first ${limit})` : ""}`,
-          },
-        ],
-        structuredContent: {
-          query,
-          results: limitedResults,
-          totalMatches: results.length,
-          returned: limitedResults.length,
-        },
-        _meta: widgetMeta(searchWidget),
-      };
-    },
-  );
-
-  // ============================================
-  // TOOL: compare_products
-  // ============================================
   server.registerTool(
     compareWidget.id,
     {
@@ -425,7 +328,6 @@ const handler = createMcpHandler(async (server) => {
         };
       }
 
-      // Calculate comparison insights
       const bestValue = selectedProducts.reduce((best, current) => {
         const bestRatio = (best.rating ?? 0) / best.price;
         const currentRatio = (current.rating ?? 0) / current.price;
@@ -472,9 +374,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: get_cart
-  // ============================================
   server.registerTool(
     cartWidget.id,
     {
@@ -510,9 +409,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: add_to_cart
-  // ============================================
   server.registerTool(
     "add_to_cart",
     {
@@ -581,9 +477,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: remove_from_cart
-  // ============================================
   server.registerTool(
     "remove_from_cart",
     {
@@ -650,46 +543,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: get_categories
-  // ============================================
-  server.registerTool(
-    categoriesWidget.id,
-    {
-      title: categoriesWidget.title,
-      description: "Get all available product categories with product counts",
-      inputSchema: {},
-      _meta: widgetMeta(categoriesWidget),
-    },
-    async () => {
-      const categoryMap = new Map<string, number>();
-      products.forEach((p) => {
-        categoryMap.set(p.category, (categoryMap.get(p.category) ?? 0) + 1);
-      });
-
-      const categories = Array.from(categoryMap.entries()).map(
-        ([name, count]) => ({ name, count }),
-      );
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Available categories: ${categories.map((c) => `${c.name} (${c.count})`).join(", ")}`,
-          },
-        ],
-        structuredContent: {
-          categories,
-          totalCategories: categories.length,
-        },
-        _meta: widgetMeta(categoriesWidget),
-      };
-    },
-  );
-
-  // ============================================
-  // TOOL: get_product_recommendations
-  // ============================================
   server.registerTool(
     "get_recommendations",
     {
@@ -721,7 +574,6 @@ const handler = createMcpHandler(async (server) => {
       if (productId) {
         const product = products.find((p) => p.id === productId);
         if (product) {
-          // Recommend products in the same category, excluding the current product
           recommendations = products
             .filter(
               (p) => p.category === product.category && p.id !== productId,
@@ -729,7 +581,6 @@ const handler = createMcpHandler(async (server) => {
             .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
             .slice(0, limit);
 
-          // If not enough in same category, add top-rated from other categories
           if (recommendations.length < limit) {
             const remaining = products
               .filter(
@@ -748,7 +599,6 @@ const handler = createMcpHandler(async (server) => {
           .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
           .slice(0, limit);
       } else {
-        // Return top-rated products overall
         recommendations = products
           .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
           .slice(0, limit);
@@ -774,9 +624,6 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
-  // ============================================
-  // TOOL: clear_cart
-  // ============================================
   server.registerTool(
     "clear_cart",
     {
