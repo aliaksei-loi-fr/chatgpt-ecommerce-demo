@@ -1,6 +1,5 @@
 import { baseURL } from "@/lib/utils";
 import { createMcpHandler } from "mcp-handler";
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { products, ProductSchema, type Product } from "./mocks";
 
@@ -33,15 +32,12 @@ function widgetMeta(widget: ContentWidget) {
 const cart: Map<string, { product: Product; quantity: number }> = new Map();
 
 const handler = createMcpHandler(async (server) => {
-  const [homeHtml, compareHtml, checkoutHtml] = await Promise.all([
+  const [homeHtml, detailsHtml, compareHtml, checkoutHtml] = await Promise.all([
     getAppsSdkCompatibleHtml(baseURL, "/"),
+    getAppsSdkCompatibleHtml(baseURL, "/details/1"),
     getAppsSdkCompatibleHtml(baseURL, "/compare"),
     getAppsSdkCompatibleHtml(baseURL, "/checkout"),
   ]);
-
-  const getDetailsHtml = async (productId: string) => {
-    return getAppsSdkCompatibleHtml(baseURL, `/details/${productId}`);
-  };
 
   const productsWidget: ContentWidget = {
     id: "list_products",
@@ -57,10 +53,10 @@ const handler = createMcpHandler(async (server) => {
   const productDetailWidget: ContentWidget = {
     id: "get_product_details",
     title: "Product Details",
-    templateUri: "ui://widget/details/{productId}",
+    templateUri: "ui://widget/product-detail-template.html",
     invoking: "Loading product details...",
     invoked: "Product details loaded",
-    html: homeHtml,
+    html: detailsHtml,
     description: "Displays detailed information about a specific product",
     widgetDomain: baseURL,
   };
@@ -118,42 +114,9 @@ const handler = createMcpHandler(async (server) => {
   };
 
   registerWidget(productsWidget);
+  registerWidget(productDetailWidget);
   registerWidget(compareWidget);
   registerWidget(cartWidget);
-
-  server.registerResource(
-    productDetailWidget.id,
-    new ResourceTemplate("ui://widget/details/{productId}", {
-      list: undefined,
-    }),
-    {
-      title: productDetailWidget.title,
-      description: productDetailWidget.description,
-      mimeType: "text/html+skybridge",
-      _meta: {
-        "openai/widgetDescription": productDetailWidget.description,
-        "openai/widgetPrefersBorder": true,
-      },
-    },
-    async (uri, { productId }) => {
-      const detailsHtml = await getDetailsHtml(productId as string);
-
-      return {
-        contents: [
-          {
-            uri: uri.href,
-            mimeType: "text/html+skybridge",
-            text: `<html>${detailsHtml}</html>`,
-            _meta: {
-              "openai/widgetDescription": productDetailWidget.description,
-              "openai/widgetPrefersBorder": true,
-              "openai/widgetDomain": productDetailWidget.widgetDomain,
-            },
-          },
-        ],
-      };
-    },
-  );
 
   server.registerTool(
     productsWidget.id,
@@ -248,10 +211,7 @@ const handler = createMcpHandler(async (server) => {
           .string()
           .describe("The unique ID of the product to retrieve"),
       },
-      _meta: {
-        "openai/toolInvocation/invoking": productDetailWidget.invoking,
-        "openai/toolInvocation/invoked": productDetailWidget.invoked,
-      },
+      _meta: widgetMeta(productDetailWidget),
     },
     async ({ productId }) => {
       const product = products.find((p) => p.id === productId);
@@ -281,13 +241,7 @@ const handler = createMcpHandler(async (server) => {
         structuredContent: {
           product,
         },
-        _meta: {
-          "openai/outputTemplate": `ui://widget/details/${productId}`,
-          "openai/toolInvocation/invoking": productDetailWidget.invoking,
-          "openai/toolInvocation/invoked": productDetailWidget.invoked,
-          "openai/widgetAccessible": false,
-          "openai/resultCanProduceWidget": true,
-        },
+        _meta: widgetMeta(productDetailWidget),
       };
     },
   );
