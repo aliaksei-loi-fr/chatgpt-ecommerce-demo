@@ -602,9 +602,9 @@ function ComparePageContent() {
             </CompareSection>
           </div>
 
-          {allSpecs.length > 0 && (
+          {allSpecs().length > 0 && (
             <CompareSection title="Specifications">
-              {allSpecs.map((spec) => (
+              {allSpecs().map((spec) => (
                 <CompareRow
                   key={spec}
                   label={spec}
