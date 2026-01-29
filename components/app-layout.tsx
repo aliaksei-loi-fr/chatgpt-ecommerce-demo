@@ -3,7 +3,6 @@
 import { Icon } from "@shopify/polaris";
 import { CartIcon, CropIcon } from "@shopify/polaris-icons";
 
-// import { ThemeToggle } from "@/components/theme-toggle";
 import {
   useDisplayMode,
   useMaxHeight,
@@ -23,8 +22,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   const [cart] = useState<Product[]>([]);
 
-  const toolInput = { query: "" };
-
   return (
     <div
       className="bg-[var(--chatgpt-bg-primary)] font-sans text-[var(--chatgpt-text-primary)]"
@@ -40,17 +37,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               PREMIUM<span className="text-[var(--chatgpt-accent)]">STORE</span>
             </button>
           </Link>
-
           <div className="flex items-center gap-1 sm:gap-2">
-            {!!toolInput?.query && (
-              <div className="hidden md:block text-sm text-[var(--chatgpt-text-muted)] mr-2">
-                Searching for:{" "}
-                <span className="text-[var(--chatgpt-text-primary)] font-medium">
-                  "{toolInput.query}"
-                </span>
-              </div>
-            )}
-            {/*<ThemeToggle />*/}
             {displayMode !== "fullscreen" && (
               <button
                 aria-label="Enter fullscreen"
@@ -80,12 +67,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {children}
       </main>
-
-      <footer className="mt-12 sm:mt-24 border-t border-[--chatgpt-border] bg-[--chatgpt-bg-secondary] py-6 sm:py-12">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 text-center text-[--chatgpt-text-muted] text-xs sm:text-sm">
-          © 2026 Premium Store. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 }

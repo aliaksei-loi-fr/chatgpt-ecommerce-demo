@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { InlineGrid } from "@shopify/polaris";
 import type { Product } from "../app/mcp/mocks";
@@ -32,7 +33,9 @@ export default function ProductGrid({
       <InlineGrid columns={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap="400">
         {products.map((product) => (
           <motion.div key={product.id} variants={item}>
-            <ProductCard product={product} onClick={onProductClick} />
+            <Link href={`/details/${product.id}`}>
+              <ProductCard product={product} onClick={onProductClick} />
+            </Link>
           </motion.div>
         ))}
       </InlineGrid>

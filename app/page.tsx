@@ -39,11 +39,11 @@ export default function Home() {
 
   const handleProductClick = async (product: Product) => {
     if (isChatGptApp) {
-      const res = await callTool("get_product_details", {
+      await callTool("get_product_details", {
         productId: product.id,
       });
 
-      console.log("res", res);
+      // console.log("res", res);
       // await sendMessage(
       //   `Show me details for product "${product.name}" (ID: ${product.id})`,
       // );
