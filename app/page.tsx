@@ -6,8 +6,15 @@ import { Text, Icon } from "@shopify/polaris";
 import { ChartHistogramGrowthIcon } from "@shopify/polaris-icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { products as mockProducts, type Product } from "./mcp/mocks";
-import { useWidgetProps, useIsChatGptApp, useCallTool } from "./hooks";
+import {
+  useWidgetProps,
+  useIsChatGptApp,
+  useCallTool,
+  useSendMessage,
+} from "./hooks";
 import Link from "next/link";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 type WidgetProps = {
   products?: Product[];
@@ -24,6 +31,9 @@ type WidgetProps = {
 export default function Home() {
   const isChatGptApp = useIsChatGptApp();
   const callTool = useCallTool();
+  const sendMessage = useSendMessage();
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const widgetProps = useWidgetProps<WidgetProps>({ products: [] });
 
@@ -42,6 +52,18 @@ export default function Home() {
     await callTool("get_product_details", {
       productId: product.id,
     });
+  };
+
+  const handleCompare = () => {
+    if (isChatGptApp) {
+      startTransition(async () => {
+        await sendMessage("Open compare page");
+      });
+
+      return;
+    }
+
+    router.push("/compare");
   };
 
   return (
@@ -64,12 +86,19 @@ export default function Home() {
               Discover our latest collection of premium goods.
             </p>
           </div>
-          <Link href="/compare">
-            <button className="flex items-center gap-2 px-4 py-2 bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors text-sm font-medium self-start sm:self-auto">
+
+          <button
+            onClick={handleCompare}
+            disabled={isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors text-sm font-medium self-start sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPending ? (
+              <span className="block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
               <Icon source={ChartHistogramGrowthIcon} tone="inherit" />
-              <span>Compare Products</span>
-            </button>
-          </Link>
+            )}
+            <span>{isPending ? "Loading..." : "Compare Products"}</span>
+          </button>
         </div>
         <ProductGrid products={products} onProductClick={handleProductClick} />
       </motion.div>
