@@ -323,21 +323,21 @@ function ComparePageContent() {
     ? (widgetState?.selectedIds ?? [])
     : localSelectedIds;
 
-  if (widgetProps === undefined) {
-    return <PageLoader />;
-  }
-
   // If MCP returns products, use them directly
   const selectedProducts = useMemo(() => {
     if (
       isChatGptApp &&
-      widgetProps.products &&
-      widgetProps.products.length > 0
+      widgetProps?.products &&
+      widgetProps?.products.length > 0
     ) {
-      return widgetProps.products;
+      return widgetProps?.products;
     }
     return mockProducts.filter((p) => selectedIds.includes(p.id));
-  }, [isChatGptApp, widgetProps.products, selectedIds]);
+  }, [isChatGptApp, widgetProps?.products, selectedIds]);
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
 
   const allSpecs = () => {
     const specs = new Set<string>();
