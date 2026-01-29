@@ -9,6 +9,8 @@ import { redirect } from "next/navigation";
 import { useParams } from "next/navigation";
 import { useWidgetProps, useIsChatGptApp, useSendMessage } from "@/app/hooks";
 import { useState } from "react";
+import Link from "next/link";
+import PageLoader from "@/components/page-loader";
 
 interface WidgetProps extends Record<string, unknown> {
   product?: Product;
@@ -23,6 +25,11 @@ export default function DetailsPage() {
 
   // Get product from MCP tool output when in ChatGPT, fallback to mocks
   const widgetProps = useWidgetProps<WidgetProps>({});
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
+
   const product: Product | undefined =
     isChatGptApp && widgetProps.product
       ? widgetProps.product
@@ -50,14 +57,6 @@ export default function DetailsPage() {
       await sendMessage("Show my shopping cart");
     } else {
       router.push("/checkout");
-    }
-  };
-
-  const onBack = async () => {
-    if (isChatGptApp) {
-      await sendMessage("Show me all products");
-    } else {
-      router.push("/");
     }
   };
 
@@ -92,13 +91,12 @@ export default function DetailsPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-sm text-[var(--chatgpt-text-secondary)] hover:text-[var(--chatgpt-text-primary)] mb-4 sm:mb-8 transition-colors"
-            >
-              <Icon source={ArrowLeftIcon} tone="base" />
-              <span>Back to Products</span>
-            </button>
+            <Link href="/">
+              <button className="flex items-center gap-2 text-sm text-[var(--chatgpt-text-secondary)] hover:text-[var(--chatgpt-text-primary)] mb-4 sm:mb-8 transition-colors">
+                <Icon source={ArrowLeftIcon} tone="base" />
+                <span>Back to Products</span>
+              </button>
+            </Link>
           </motion.div>
 
           <motion.div

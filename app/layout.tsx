@@ -81,12 +81,12 @@ function NextChatSDKBootstrap({ baseUrl }: { baseUrl: string }) {
               originalReplaceState.call(history, unused, href);
             };
 
-            // const originalPushState = history.pushState;
-            // history.pushState = (s, unused, url) => {
-            //   const u = new URL(url ?? "", window.location.href);
-            //   const href = u.pathname + u.search + u.hash;
-            //   originalPushState.call(history, unused, href);
-            // };
+            const originalPushState = history.pushState;
+            history.pushState = (s, unused, url) => {
+              const u = new URL(url ?? "", window.location.href);
+              const href = u.pathname + u.search + u.hash;
+              originalPushState.call(history, unused, href);
+            };
 
             const appOrigin = new URL(baseUrl).origin;
             const isInIframe = window.self !== window.top;

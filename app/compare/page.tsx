@@ -1,17 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { products as mockProducts, type Product } from "@/app/mcp/mocks";
 import { Badge, Icon, Text } from "@shopify/polaris";
 import { ArrowLeftIcon, XIcon } from "@shopify/polaris-icons";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState, useEffect } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   useWidgetProps,
   useWidgetState,
   useIsChatGptApp,
   useSendMessage,
 } from "@/app/hooks";
+import PageLoader from "@/components/page-loader";
 
 interface CompareWidgetProps extends Record<string, unknown> {
   products?: Product[];
@@ -54,12 +56,10 @@ function StarRating({ rating }: { rating: number }) {
 function CompareCard({
   product,
   onRemove,
-  onViewDetails,
   compact = false,
 }: {
   product: Product;
   onRemove: () => void;
-  onViewDetails: () => void;
   compact?: boolean;
 }) {
   if (compact) {
@@ -130,12 +130,11 @@ function CompareCard({
           </span>
         </Text>
         {product.rating && <StarRating rating={product.rating} />}
-        <button
-          onClick={onViewDetails}
-          className="mt-2 sm:mt-3 w-full py-1.5 sm:py-2 text-xs sm:text-sm border border-[var(--chatgpt-border)] rounded-lg hover:bg-[var(--chatgpt-bg-hover)] transition-colors text-[var(--chatgpt-text-primary)]"
-        >
-          View Details
-        </button>
+        <Link href={`/details/${product.id}`}>
+          <button className="mt-2 sm:mt-3 w-full py-1.5 sm:py-2 text-xs sm:text-sm border border-[var(--chatgpt-border)] rounded-lg hover:bg-[var(--chatgpt-bg-hover)] transition-colors text-[var(--chatgpt-text-primary)]">
+            View Details
+          </button>
+        </Link>
       </div>
     </motion.div>
   );
@@ -299,7 +298,6 @@ function ProsConsRow({
 }
 
 function ComparePageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const isChatGptApp = useIsChatGptApp();
   const sendMessage = useSendMessage();
@@ -313,6 +311,10 @@ function ComparePageContent() {
   });
 
   const initialIds = searchParams.get("ids")?.split(",").filter(Boolean) ?? [];
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
 
   // Local state for non-ChatGPT mode
   const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(
@@ -385,22 +387,6 @@ function ComparePageContent() {
     }
   };
 
-  const handleViewDetails = async (productId: string) => {
-    if (isChatGptApp) {
-      await sendMessage(`Show me details for product ID: ${productId}`);
-    } else {
-      router.push(`/details/${productId}`);
-    }
-  };
-
-  const handleBack = async () => {
-    if (isChatGptApp) {
-      await sendMessage("Show me all products");
-    } else {
-      router.push("/");
-    }
-  };
-
   // Get insights from MCP or calculate locally
   const insights = widgetProps.insights ?? {
     bestValue:
@@ -432,13 +418,12 @@ function ComparePageContent() {
         animate={{ opacity: 1 }}
         className="mb-4 sm:mb-6"
       >
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 text-xs sm:text-sm text-[var(--chatgpt-text-secondary)] hover:text-[var(--chatgpt-text-primary)] transition-colors"
-        >
-          <Icon source={ArrowLeftIcon} tone="base" />
-          <span>Back to Products</span>
-        </button>
+        <Link href="/">
+          <button className="flex items-center gap-2 text-xs sm:text-sm text-[var(--chatgpt-text-secondary)] hover:text-[var(--chatgpt-text-primary)] transition-colors">
+            <Icon source={ArrowLeftIcon} tone="base" />
+            <span>Back to Products</span>
+          </button>
+        </Link>
       </motion.div>
 
       <motion.div
@@ -547,20 +532,17 @@ function ComparePageContent() {
         </motion.div>
       ) : (
         <>
-          {/* Mobile: Compact card list */}
           <div className="block sm:hidden space-y-2 mt-4">
             {selectedProducts.map((product) => (
               <CompareCard
                 key={product.id}
                 product={product}
                 onRemove={() => removeProduct(product.id)}
-                onViewDetails={() => handleViewDetails(product.id)}
                 compact
               />
             ))}
           </div>
 
-          {/* Desktop: Horizontal scrollable cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -572,7 +554,6 @@ function ComparePageContent() {
                 key={product.id}
                 product={product}
                 onRemove={() => removeProduct(product.id)}
-                onViewDetails={() => handleViewDetails(product.id)}
               />
             ))}
           </motion.div>
@@ -594,7 +575,6 @@ function ComparePageContent() {
             />
           </CompareSection>
 
-          {/* Mobile: Stacked pros/cons cards */}
           <div className="block sm:hidden mt-4">
             <Text as="h3" variant="headingMd">
               <span className="text-[var(--chatgpt-text-primary)] mb-2 block text-sm">
@@ -608,7 +588,6 @@ function ComparePageContent() {
             </div>
           </div>
 
-          {/* Desktop: Table pros/cons */}
           <div className="hidden sm:block">
             <CompareSection title="Pros & Cons">
               <ProsConsRow

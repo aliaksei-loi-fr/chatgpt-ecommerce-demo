@@ -1,19 +1,15 @@
 "use client";
 
 import ProductGrid from "@/components/product-grid";
+import PageLoader from "@/components/page-loader";
 import { Text, Icon } from "@shopify/polaris";
 import { ChartHistogramGrowthIcon } from "@shopify/polaris-icons";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { products as mockProducts, type Product } from "./mcp/mocks";
-import {
-  useWidgetProps,
-  useIsChatGptApp,
-  // useSendMessage,
-  useCallTool,
-} from "./hooks";
+import { useWidgetProps, useIsChatGptApp, useCallTool } from "./hooks";
+import Link from "next/link";
 
-interface WidgetProps extends Record<string, unknown> {
+type WidgetProps = {
   products?: Product[];
   total?: number;
   filters?: {
@@ -23,39 +19,29 @@ interface WidgetProps extends Record<string, unknown> {
     sortBy?: string;
     limit?: number;
   };
-}
+} & Record<string, unknown>;
 
 export default function Home() {
-  const router = useRouter();
   const isChatGptApp = useIsChatGptApp();
-  // const sendMessage = useSendMessage();
   const callTool = useCallTool();
 
   const widgetProps = useWidgetProps<WidgetProps>({ products: [] });
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
+
   const products =
     isChatGptApp && widgetProps.products && widgetProps.products.length > 0
       ? widgetProps.products
       : mockProducts;
 
   const handleProductClick = async (product: Product) => {
-    if (isChatGptApp) {
-      await callTool("get_product_details", {
-        productId: product.id,
-      });
+    if (!isChatGptApp) return;
 
-      // console.log("res", res);
-      // await sendMessage(
-      //   `Show me details for product "${product.name}" (ID: ${product.id})`,
-      // );
-    }
-
-    router.push(`/details/${product.id}`);
-  };
-
-  const handleCompareClick = async () => {
-    if (isChatGptApp) await callTool("get_product_details", {});
-
-    router.push("/compare");
+    await callTool("get_product_details", {
+      productId: product.id,
+    });
   };
 
   return (
@@ -78,13 +64,12 @@ export default function Home() {
               Discover our latest collection of premium goods.
             </p>
           </div>
-          <button
-            onClick={handleCompareClick}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors text-sm font-medium self-start sm:self-auto"
-          >
-            <Icon source={ChartHistogramGrowthIcon} tone="inherit" />
-            <span>Compare Products</span>
-          </button>
+          <Link href="/compare">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors text-sm font-medium self-start sm:self-auto">
+              <Icon source={ChartHistogramGrowthIcon} tone="inherit" />
+              <span>Compare Products</span>
+            </button>
+          </Link>
         </div>
         <ProductGrid products={products} onProductClick={handleProductClick} />
       </motion.div>

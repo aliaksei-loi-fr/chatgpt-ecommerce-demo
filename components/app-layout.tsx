@@ -5,22 +5,38 @@ import { CartIcon, CropIcon } from "@shopify/polaris-icons";
 
 import {
   useDisplayMode,
+  useIsChatGptApp,
   useMaxHeight,
   useRequestDisplayMode,
+  useSendMessage,
 } from "@/app/hooks";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Product } from "@/app/mcp/mocks";
 import Link from "next/link";
 
 import type { PropsWithChildren } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AppLayout({ children }: PropsWithChildren) {
+  const router = useRouter();
   const maxHeight = useMaxHeight() ?? undefined;
   const displayMode = useDisplayMode();
+  const sendMessage = useSendMessage();
   const requestDisplayMode = useRequestDisplayMode();
+  const isChatGptApp = useIsChatGptApp();
+  const [isPending, startTransition] = useTransition();
 
-  const [cart] = useState<Product[]>([]);
+  const handleCheckoutClick = () => {
+    startTransition(async () => {
+      if (isChatGptApp) {
+        await sendMessage("Open my cart");
+        return;
+      }
+
+      router.push("/checkout");
+    });
+  };
 
   return (
     <div
@@ -47,19 +63,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 <Icon source={CropIcon} />
               </button>
             )}
-            <Link href="/checkout">
-              <button
-                className="relative p-2 hover:bg-[var(--chatgpt-bg-hover)] rounded-full transition-colors"
-                aria-label="Cart"
-              >
+            <button
+              onClick={handleCheckoutClick}
+              disabled={isPending}
+              className="relative p-2 hover:bg-[var(--chatgpt-bg-hover)] rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Cart"
+            >
+              {isPending ? (
+                <span className="block w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
                 <Icon source={CartIcon} />
-                {cart?.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[var(--chatgpt-accent)] text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center ring-2 ring-[var(--chatgpt-bg-secondary)]">
-                    {cart.length}
-                  </span>
-                )}
-              </button>
-            </Link>
+              )}
+            </button>
           </div>
         </div>
       </div>

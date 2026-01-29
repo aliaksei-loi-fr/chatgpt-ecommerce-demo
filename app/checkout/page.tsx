@@ -9,6 +9,7 @@ import { ArrowLeftIcon, CartIcon, DeleteIcon } from "@shopify/polaris-icons";
 import type { Product } from "@/app/mcp/mocks";
 import { useWidgetProps, useIsChatGptApp, useSendMessage } from "@/app/hooks";
 import { useState } from "react";
+import PageLoader from "@/components/page-loader";
 
 interface CartItem {
   product: Product;
@@ -35,6 +36,10 @@ export default function CheckoutPage() {
   // Get cart data from MCP tool output when in ChatGPT
   const widgetProps = useWidgetProps<CartWidgetProps>({});
 
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
+
   // Extract cart items from widget props
   const cartData = widgetProps.cart ?? {
     items: widgetProps.items ?? [],
@@ -46,24 +51,9 @@ export default function CheckoutPage() {
   const subtotal = cartData.subtotal;
 
   const handleRemoveItem = async (productId: string) => {
-    if (isChatGptApp) {
-      await sendMessage(`Remove product ID: ${productId} from my cart`);
-    }
-  };
+    if (!isChatGptApp) return;
 
-  const handleUpdateQuantity = async (
-    productId: string,
-    newQuantity: number,
-  ) => {
-    if (isChatGptApp) {
-      if (newQuantity <= 0) {
-        await sendMessage(`Remove product ID: ${productId} from my cart`);
-      } else {
-        await sendMessage(
-          `Update quantity of product ID: ${productId} to ${newQuantity}`,
-        );
-      }
-    }
+    await sendMessage(`Remove product ID: ${productId} from my cart`);
   };
 
   const handleClearCart = async () => {
@@ -79,6 +69,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
+
     try {
       if (isChatGptApp) {
         await sendMessage(
