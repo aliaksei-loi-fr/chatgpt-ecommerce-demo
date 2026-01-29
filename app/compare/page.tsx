@@ -335,11 +335,7 @@ function ComparePageContent() {
     return mockProducts.filter((p) => selectedIds.includes(p.id));
   }, [isChatGptApp, widgetProps?.products, selectedIds]);
 
-  if (widgetProps === undefined) {
-    return <PageLoader />;
-  }
-
-  const allSpecs = () => {
+  const allSpecs = useMemo(() => {
     const specs = new Set<string>();
 
     selectedProducts.forEach((p) => {
@@ -348,7 +344,11 @@ function ComparePageContent() {
       }
     });
     return Array.from(specs);
-  };
+  }, [selectedProducts]);
+
+  if (widgetProps === undefined) {
+    return <PageLoader />;
+  }
 
   // Available products for selection
   const availableProducts = mockProducts;
@@ -371,12 +371,14 @@ function ComparePageContent() {
     }
   };
 
-  const removeProduct = (id: string) => {
+  const removeProduct = async (id: string) => {
     if (isChatGptApp) {
       setWidgetState((prev) => ({
         ...prev,
         selectedIds: (prev?.selectedIds ?? []).filter((i) => i !== id),
       }));
+
+      await sendMessage(`Remove product with ID: ${id}`);
     } else {
       setLocalSelectedIds((prev) => prev.filter((i) => i !== id));
     }
@@ -602,9 +604,9 @@ function ComparePageContent() {
             </CompareSection>
           </div>
 
-          {allSpecs().length > 0 && (
+          {allSpecs.length > 0 && (
             <CompareSection title="Specifications">
-              {allSpecs().map((spec) => (
+              {allSpecs.map((spec) => (
                 <CompareRow
                   key={spec}
                   label={spec}
