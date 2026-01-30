@@ -197,21 +197,13 @@ const handler = createMcpHandler(async (server) => {
       }
 
       return {
-        content: [
-          {
-            type: "text",
-            text: `Found ${filteredProducts.length} products${category ? ` in category "${category}"` : ""}${minPrice !== undefined || maxPrice !== undefined ? ` within price range $${minPrice ?? 0} - $${maxPrice ?? "∞"}` : ""}`,
-          },
-        ],
+        content: [],
         structuredContent: {
           products: filteredProducts,
           total: filteredProducts.length,
           filters: { category, minPrice, maxPrice, sortBy, limit },
         },
-        _meta: {
-          ...widgetMeta(productsWidget),
-          "openai/suppressCitations": true,
-        },
+        _meta: widgetMeta(productsWidget),
       };
     },
   );
@@ -366,12 +358,7 @@ const handler = createMcpHandler(async (server) => {
         filterParts.length > 0 ? ` ${filterParts.join(", ")}` : "";
 
       return {
-        content: [
-          {
-            type: "text",
-            text: `Found ${filteredProducts.length} products${filterDescription}`,
-          },
-        ],
+        content: [],
         structuredContent: {
           products: filteredProducts,
           total: filteredProducts.length,
@@ -393,10 +380,7 @@ const handler = createMcpHandler(async (server) => {
             ...new Set(products.map((p) => p.material).filter(Boolean)),
           ],
         },
-        _meta: {
-          ...widgetMeta(searchWidget),
-          "openai/suppressCitations": true,
-        },
+        _meta: widgetMeta(searchWidget),
       };
     },
   );
