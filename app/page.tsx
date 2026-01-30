@@ -20,12 +20,18 @@ type WidgetProps = {
   products?: Product[];
   total?: number;
   filters?: {
+    query?: string;
+    color?: string;
+    material?: string;
     category?: string;
+    minRating?: number;
     minPrice?: number;
     maxPrice?: number;
     sortBy?: string;
     limit?: number;
   };
+  availableColors?: string[];
+  availableMaterials?: string[];
 } & Record<string, unknown>;
 
 export default function Home() {
@@ -45,6 +51,17 @@ export default function Home() {
     isChatGptApp && widgetProps.products && widgetProps.products.length > 0
       ? widgetProps.products
       : mockProducts;
+
+  const filters = widgetProps.filters;
+  const hasActiveFilters =
+    filters &&
+    (filters.query ||
+      filters.color ||
+      filters.material ||
+      filters.category ||
+      filters.minRating ||
+      filters.minPrice ||
+      filters.maxPrice);
 
   const handleProductClick = async (product: Product) => {
     if (!isChatGptApp) return;
@@ -79,11 +96,13 @@ export default function Home() {
           <div>
             <Text as="h1" variant="heading2xl">
               <span className="text-[var(--chatgpt-text-primary)] text-xl sm:text-3xl">
-                New Arrivals
+                {hasActiveFilters ? "Search Results" : "New Arrivals"}
               </span>
             </Text>
             <p className="text-[var(--chatgpt-text-secondary)] text-sm sm:text-lg mt-1 sm:mt-2">
-              Discover our latest collection of premium goods.
+              {hasActiveFilters
+                ? `Found ${widgetProps.total ?? products.length} products`
+                : "Discover our latest collection of premium goods."}
             </p>
           </div>
 
@@ -100,6 +119,42 @@ export default function Home() {
             <span>{isPending ? "Loading..." : "Compare Products"}</span>
           </button>
         </div>
+
+        {hasActiveFilters && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {filters.query && (
+              <span className="px-3 py-1 bg-[var(--chatgpt-surface-secondary)] text-[var(--chatgpt-text-secondary)] rounded-full text-sm">
+                Search: &quot;{filters.query}&quot;
+              </span>
+            )}
+            {filters.color && (
+              <span className="px-3 py-1 bg-[var(--chatgpt-surface-secondary)] text-[var(--chatgpt-text-secondary)] rounded-full text-sm">
+                Color: {filters.color}
+              </span>
+            )}
+            {filters.material && (
+              <span className="px-3 py-1 bg-[var(--chatgpt-surface-secondary)] text-[var(--chatgpt-text-secondary)] rounded-full text-sm">
+                Material: {filters.material}
+              </span>
+            )}
+            {filters.category && (
+              <span className="px-3 py-1 bg-[var(--chatgpt-surface-secondary)] text-[var(--chatgpt-text-secondary)] rounded-full text-sm">
+                Category: {filters.category}
+              </span>
+            )}
+            {filters.minRating !== undefined && (
+              <span className="px-3 py-1 bg-[var(--chatgpt-surface-secondary)] text-[var(--chatgpt-text-secondary)] rounded-full text-sm">
+                Rating: {filters.minRating}+
+              </span>
+            )}
+            {(filters.minPrice !== undefined ||
+              filters.maxPrice !== undefined) && (
+              <span className="px-3 py-1 bg-[var(--chatgpt-surface-secondary)] text-[var(--chatgpt-text-secondary)] rounded-full text-sm">
+                Price: ${filters.minPrice ?? 0} - ${filters.maxPrice ?? "∞"}
+              </span>
+            )}
+          </div>
+        )}
         <ProductGrid products={products} onProductClick={handleProductClick} />
       </motion.div>
     </AnimatePresence>

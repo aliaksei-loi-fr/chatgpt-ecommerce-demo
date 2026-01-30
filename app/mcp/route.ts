@@ -83,6 +83,18 @@ const handler = createMcpHandler(async (server) => {
     widgetDomain: baseURL,
   };
 
+  const searchWidget: ContentWidget = {
+    id: "search_products",
+    title: "Product Search",
+    templateUri: "ui://widget/search-template.html",
+    invoking: "Searching products...",
+    invoked: "Search complete",
+    html: homeHtml,
+    description:
+      "Search and filter products by color, material, price, rating, and more",
+    widgetDomain: baseURL,
+  };
+
   const registerWidget = (widget: ContentWidget) => {
     server.registerResource(
       widget.id,
@@ -117,6 +129,7 @@ const handler = createMcpHandler(async (server) => {
   registerWidget(productDetailWidget);
   registerWidget(compareWidget);
   registerWidget(cartWidget);
+  registerWidget(searchWidget);
 
   server.registerTool(
     productsWidget.id,
@@ -196,6 +209,188 @@ const handler = createMcpHandler(async (server) => {
           filters: { category, minPrice, maxPrice, sortBy, limit },
         },
         _meta: widgetMeta(productsWidget),
+      };
+    },
+  );
+
+  server.registerTool(
+    searchWidget.id,
+    {
+      title: searchWidget.title,
+      description:
+        "Search products by various criteria including color, material, text query, minimum rating, and price range. Use this to find specific products based on user preferences.",
+      inputSchema: {
+        query: z
+          .string()
+          .optional()
+          .describe(
+            "Text search query to match against product name, description, or features",
+          ),
+        color: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by color (e.g., 'Black', 'Brown', 'Navy', 'Gray', 'Green')",
+          ),
+        material: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by material (e.g., 'Nylon', 'Canvas', 'Polyester', 'Recycled Plastic')",
+          ),
+        minRating: z
+          .number()
+          .min(0)
+          .max(5)
+          .optional()
+          .describe("Minimum rating filter (0-5)"),
+        minPrice: z.number().optional().describe("Minimum price filter in USD"),
+        maxPrice: z.number().optional().describe("Maximum price filter in USD"),
+        category: z
+          .string()
+          .optional()
+          .describe(
+            "Filter by category (e.g., 'Travel', 'Outdoor', 'Lifestyle', 'Commuter', 'Photography')",
+          ),
+        sortBy: z
+          .enum(["price_asc", "price_desc", "rating_desc", "name_asc"])
+          .optional()
+          .describe(
+            "Sort order: price_asc, price_desc, rating_desc, or name_asc",
+          ),
+        limit: z
+          .number()
+          .optional()
+          .describe("Maximum number of products to return"),
+      },
+      _meta: widgetMeta(searchWidget),
+    },
+    async ({
+      query,
+      color,
+      material,
+      minRating,
+      minPrice,
+      maxPrice,
+      category,
+      sortBy,
+      limit,
+    }) => {
+      let filteredProducts = [...products];
+
+      // Text search across name, description, pros
+      if (query) {
+        const searchTerm = query.toLowerCase();
+        filteredProducts = filteredProducts.filter(
+          (p) =>
+            p.name.toLowerCase().includes(searchTerm) ||
+            p.description.toLowerCase().includes(searchTerm) ||
+            p.pros?.some((pro) => pro.toLowerCase().includes(searchTerm)),
+        );
+      }
+
+      // Color filter
+      if (color) {
+        filteredProducts = filteredProducts.filter(
+          (p) => p.color?.toLowerCase() === color.toLowerCase(),
+        );
+      }
+
+      // Material filter
+      if (material) {
+        filteredProducts = filteredProducts.filter((p) =>
+          p.material?.toLowerCase().includes(material.toLowerCase()),
+        );
+      }
+
+      // Category filter
+      if (category) {
+        filteredProducts = filteredProducts.filter(
+          (p) => p.category.toLowerCase() === category.toLowerCase(),
+        );
+      }
+
+      // Rating filter
+      if (minRating !== undefined) {
+        filteredProducts = filteredProducts.filter(
+          (p) => (p.rating ?? 0) >= minRating,
+        );
+      }
+
+      // Price filters
+      if (minPrice !== undefined) {
+        filteredProducts = filteredProducts.filter((p) => p.price >= minPrice);
+      }
+      if (maxPrice !== undefined) {
+        filteredProducts = filteredProducts.filter((p) => p.price <= maxPrice);
+      }
+
+      // Sorting
+      if (sortBy) {
+        switch (sortBy) {
+          case "price_asc":
+            filteredProducts.sort((a, b) => a.price - b.price);
+            break;
+          case "price_desc":
+            filteredProducts.sort((a, b) => b.price - a.price);
+            break;
+          case "rating_desc":
+            filteredProducts.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+            break;
+          case "name_asc":
+            filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+            break;
+        }
+      }
+
+      // Limit results
+      if (limit && limit > 0) {
+        filteredProducts = filteredProducts.slice(0, limit);
+      }
+
+      // Build filter description for response
+      const filterParts: string[] = [];
+      if (query) filterParts.push(`matching "${query}"`);
+      if (color) filterParts.push(`in ${color}`);
+      if (material) filterParts.push(`made of ${material}`);
+      if (category) filterParts.push(`in category "${category}"`);
+      if (minRating !== undefined) filterParts.push(`rated ${minRating}+`);
+      if (minPrice !== undefined || maxPrice !== undefined) {
+        filterParts.push(`priced $${minPrice ?? 0} - $${maxPrice ?? "∞"}`);
+      }
+
+      const filterDescription =
+        filterParts.length > 0 ? ` ${filterParts.join(", ")}` : "";
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Found ${filteredProducts.length} products${filterDescription}`,
+          },
+        ],
+        structuredContent: {
+          products: filteredProducts,
+          total: filteredProducts.length,
+          filters: {
+            query,
+            color,
+            material,
+            category,
+            minRating,
+            minPrice,
+            maxPrice,
+            sortBy,
+            limit,
+          },
+          availableColors: [
+            ...new Set(products.map((p) => p.color).filter(Boolean)),
+          ],
+          availableMaterials: [
+            ...new Set(products.map((p) => p.material).filter(Boolean)),
+          ],
+        },
+        _meta: widgetMeta(searchWidget),
       };
     },
   );

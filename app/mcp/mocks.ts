@@ -7,6 +7,8 @@ export const ProductSchema = z.object({
   price: z.number().describe("Product price in USD."),
   category: z.string().describe("Product category."),
   image: z.string().describe("Product image URL."),
+  color: z.string().optional().describe("Product primary color."),
+  material: z.string().optional().describe("Product primary material."),
   rating: z
     .number()
     .min(0)
@@ -30,6 +32,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
     category: "Commuter",
+    color: "Black",
+    material: "Polyester",
     rating: 4.6,
     pros: [
       "Anti-theft hidden pocket",
@@ -60,6 +64,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?w=800&q=80",
     category: "Travel",
+    color: "Gray",
+    material: "Nylon",
     rating: 4.3,
     pros: [
       "Extremely lightweight (200g)",
@@ -85,6 +91,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1509762774605-f07235a08f1f?w=800&q=80",
     category: "Lifestyle",
+    color: "Brown",
+    material: "Canvas",
     rating: 4.5,
     pros: [
       "Premium waxed canvas",
@@ -111,6 +119,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=800&q=80",
     category: "Outdoor",
+    color: "Navy",
+    material: "Nylon",
     rating: 4.6,
     pros: [
       "100% waterproof (IPX6)",
@@ -140,6 +150,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=80",
     category: "Photography",
+    color: "Black",
+    material: "Canvas",
     rating: 4.5,
     pros: [
       "Customizable dividers",
@@ -166,6 +178,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1581605405669-fcdf81165afa?w=800&q=80",
     category: "Travel",
+    color: "Black",
+    material: "Polyester",
     rating: 4.8,
     pros: [
       "Carry-on compliant",
@@ -191,6 +205,8 @@ export const products: Product[] = [
     image:
       "https://images.unsplash.com/photo-1585916420730-d7f95e942d43?w=800&q=80",
     category: "Lifestyle",
+    color: "Green",
+    material: "Recycled Plastic",
     rating: 4.4,
     pros: [
       "Made from recycled materials",
