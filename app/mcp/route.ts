@@ -1,25 +1,24 @@
 import { baseURL } from "@/lib/utils";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { products, ProductSchema, type Product } from "./mocks";
+import { createUIResource } from "@mcp-ui/server";
+import { products, type Product } from "./mocks";
 
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
   return await result.text();
 };
 
-type ContentWidget = {
+type WidgetConfig = {
   id: string;
   title: string;
-  templateUri: string;
+  templateUri: `ui://${string}`;
   invoking: string;
   invoked: string;
-  html: string;
   description: string;
-  widgetDomain: string;
 };
 
-function widgetMeta(widget: ContentWidget) {
+function createWidgetMeta(widget: WidgetConfig) {
   return {
     "openai/outputTemplate": widget.templateUri,
     "openai/toolInvocation/invoking": widget.invoking,
@@ -39,85 +38,147 @@ const handler = createMcpHandler(async (server) => {
     getAppsSdkCompatibleHtml(baseURL, "/checkout"),
   ]);
 
-  const productsWidget: ContentWidget = {
+  // Widget configurations
+  const productsWidget: WidgetConfig = {
     id: "list_products",
     title: "Product Catalog",
-    templateUri: "ui://widget/products-template.html",
+    templateUri: "ui://widgets/products",
     invoking: "Loading products...",
     invoked: "Products loaded",
-    html: homeHtml,
     description: "Displays the product catalog with filtering options",
-    widgetDomain: baseURL,
   };
 
-  const productDetailWidget: ContentWidget = {
+  const productDetailWidget: WidgetConfig = {
     id: "get_product_details",
     title: "Product Details",
-    templateUri: "ui://widget/product-detail-template.html",
+    templateUri: "ui://widgets/product-detail",
     invoking: "Loading product details...",
     invoked: "Product details loaded",
-    html: detailsHtml,
     description: "Displays detailed information about a specific product",
-    widgetDomain: baseURL,
   };
 
-  const compareWidget: ContentWidget = {
+  const compareWidget: WidgetConfig = {
     id: "compare_products",
     title: "Product Comparison",
-    templateUri: "ui://widget/compare-template.html",
+    templateUri: "ui://widgets/compare",
     invoking: "Loading comparison...",
     invoked: "Comparison ready",
-    html: compareHtml,
     description: "Compare multiple products side by side",
-    widgetDomain: baseURL,
   };
 
-  const cartWidget: ContentWidget = {
+  const cartWidget: WidgetConfig = {
     id: "get_cart",
     title: "Shopping Cart",
-    templateUri: "ui://widget/cart-template.html",
+    templateUri: "ui://widgets/cart",
     invoking: "Loading cart...",
     invoked: "Cart loaded",
-    html: checkoutHtml,
     description: "Displays the shopping cart contents",
-    widgetDomain: baseURL,
   };
 
-  const registerWidget = (widget: ContentWidget) => {
-    server.registerResource(
-      widget.id,
-      widget.templateUri,
-      {
-        title: widget.title,
-        description: widget.description,
-        mimeType: "text/html+skybridge",
-        _meta: {
-          "openai/widgetDescription": widget.description,
-          "openai/widgetPrefersBorder": true,
-        },
+  // Create UI resources with Apps SDK adapter for ChatGPT
+  const productsUIResource = createUIResource({
+    uri: productsWidget.templateUri,
+    encoding: "text",
+    adapters: {
+      appsSdk: {
+        enabled: true,
+        config: { intentHandling: "prompt" },
       },
-      async (uri) => ({
-        contents: [
-          {
-            uri: uri.href,
-            mimeType: "text/html+skybridge",
-            text: `<html>${widget.html}</html>`,
-            _meta: {
-              "openai/widgetDescription": widget.description,
-              "openai/widgetPrefersBorder": true,
-              "openai/widgetDomain": widget.widgetDomain,
-            },
-          },
-        ],
-      }),
-    );
-  };
+    },
+    content: {
+      type: "rawHtml",
+      htmlString: homeHtml,
+    },
+    metadata: {
+      "openai/widgetDescription": productsWidget.description,
+      "openai/widgetPrefersBorder": true,
+    },
+  });
 
-  registerWidget(productsWidget);
-  registerWidget(productDetailWidget);
-  registerWidget(compareWidget);
-  registerWidget(cartWidget);
+  const productDetailUIResource = createUIResource({
+    uri: productDetailWidget.templateUri,
+    encoding: "text",
+    adapters: {
+      appsSdk: {
+        enabled: true,
+        config: { intentHandling: "prompt" },
+      },
+    },
+    content: {
+      type: "rawHtml",
+      htmlString: detailsHtml,
+    },
+    metadata: {
+      "openai/widgetDescription": productDetailWidget.description,
+      "openai/widgetPrefersBorder": true,
+    },
+  });
 
+  const compareUIResource = createUIResource({
+    uri: compareWidget.templateUri,
+    encoding: "text",
+    adapters: {
+      appsSdk: {
+        enabled: true,
+        config: { intentHandling: "prompt" },
+      },
+    },
+    content: {
+      type: "rawHtml",
+      htmlString: compareHtml,
+    },
+    metadata: {
+      "openai/widgetDescription": compareWidget.description,
+      "openai/widgetPrefersBorder": true,
+    },
+  });
+
+  const cartUIResource = createUIResource({
+    uri: cartWidget.templateUri,
+    encoding: "text",
+    adapters: {
+      appsSdk: {
+        enabled: true,
+        config: { intentHandling: "prompt" },
+      },
+    },
+    content: {
+      type: "rawHtml",
+      htmlString: checkoutHtml,
+    },
+    metadata: {
+      "openai/widgetDescription": cartWidget.description,
+      "openai/widgetPrefersBorder": true,
+    },
+  });
+
+  // Register resources with the server
+  server.registerResource(
+    productsWidget.id,
+    productsWidget.templateUri,
+    { description: productsWidget.description },
+    async () => ({ contents: [productsUIResource.resource] }),
+  );
+  server.registerResource(
+    productDetailWidget.id,
+    productDetailWidget.templateUri,
+    { description: productDetailWidget.description },
+    async () => ({ contents: [productDetailUIResource.resource] }),
+  );
+  server.registerResource(
+    compareWidget.id,
+    compareWidget.templateUri,
+    { description: compareWidget.description },
+    async () => ({ contents: [compareUIResource.resource] }),
+  );
+  server.registerResource(
+    cartWidget.id,
+    cartWidget.templateUri,
+    { description: cartWidget.description },
+    async () => ({ contents: [cartUIResource.resource] }),
+  );
+
+  // Register tools
   server.registerTool(
     productsWidget.id,
     {
@@ -144,7 +205,7 @@ const handler = createMcpHandler(async (server) => {
           .optional()
           .describe("Maximum number of products to return"),
       },
-      _meta: widgetMeta(productsWidget),
+      _meta: createWidgetMeta(productsWidget),
     },
     async ({ category, minPrice, maxPrice, sortBy, limit }) => {
       let filteredProducts = [...products];
@@ -195,7 +256,6 @@ const handler = createMcpHandler(async (server) => {
           total: filteredProducts.length,
           filters: { category, minPrice, maxPrice, sortBy, limit },
         },
-        _meta: widgetMeta(productsWidget),
       };
     },
   );
@@ -211,7 +271,7 @@ const handler = createMcpHandler(async (server) => {
           .string()
           .describe("The unique ID of the product to retrieve"),
       },
-      _meta: widgetMeta(productDetailWidget),
+      _meta: createWidgetMeta(productDetailWidget),
     },
     async ({ productId }) => {
       const product = products.find((p) => p.id === productId);
@@ -241,7 +301,6 @@ const handler = createMcpHandler(async (server) => {
         structuredContent: {
           product,
         },
-        _meta: widgetMeta(productDetailWidget),
       };
     },
   );
@@ -259,12 +318,12 @@ const handler = createMcpHandler(async (server) => {
           .max(4)
           .describe("Array of 2-4 product IDs to compare"),
       },
-      _meta: widgetMeta(compareWidget),
+      _meta: createWidgetMeta(compareWidget),
     },
     async ({ productIds }) => {
       const selectedProducts = productIds
-        .map((id) => products.find((p) => p.id === id))
-        .filter((p): p is Product => p !== undefined);
+        .map((id: string) => products.find((p: Product) => p.id === id))
+        .filter((p: Product | undefined): p is Product => p !== undefined);
 
       if (selectedProducts.length < 2) {
         return {
@@ -282,25 +341,29 @@ const handler = createMcpHandler(async (server) => {
         };
       }
 
-      const bestValue = selectedProducts.reduce((best, current) => {
-        const bestRatio = (best.rating ?? 0) / best.price;
-        const currentRatio = (current.rating ?? 0) / current.price;
-        return currentRatio > bestRatio ? current : best;
-      });
-
-      const highestRated = selectedProducts.reduce((best, current) =>
-        (current.rating ?? 0) > (best.rating ?? 0) ? current : best,
+      const bestValue = selectedProducts.reduce(
+        (best: Product, current: Product) => {
+          const bestRatio = (best.rating ?? 0) / best.price;
+          const currentRatio = (current.rating ?? 0) / current.price;
+          return currentRatio > bestRatio ? current : best;
+        },
       );
 
-      const lowestPrice = selectedProducts.reduce((lowest, current) =>
-        current.price < lowest.price ? current : lowest,
+      const highestRated = selectedProducts.reduce(
+        (best: Product, current: Product) =>
+          (current.rating ?? 0) > (best.rating ?? 0) ? current : best,
+      );
+
+      const lowestPrice = selectedProducts.reduce(
+        (lowest: Product, current: Product) =>
+          current.price < lowest.price ? current : lowest,
       );
 
       return {
         content: [
           {
             type: "text",
-            text: `Comparing ${selectedProducts.length} products: ${selectedProducts.map((p) => p.name).join(", ")}. Best Value: ${bestValue.name}, Highest Rated: ${highestRated.name}, Lowest Price: ${lowestPrice.name}`,
+            text: `Comparing ${selectedProducts.length} products: ${selectedProducts.map((p: Product) => p.name).join(", ")}. Best Value: ${bestValue.name}, Highest Rated: ${highestRated.name}, Lowest Price: ${lowestPrice.name}`,
           },
         ],
         structuredContent: {
@@ -319,11 +382,10 @@ const handler = createMcpHandler(async (server) => {
             },
           },
           priceRange: {
-            min: Math.min(...selectedProducts.map((p) => p.price)),
-            max: Math.max(...selectedProducts.map((p) => p.price)),
+            min: Math.min(...selectedProducts.map((p: Product) => p.price)),
+            max: Math.max(...selectedProducts.map((p: Product) => p.price)),
           },
         },
-        _meta: widgetMeta(compareWidget),
       };
     },
   );
@@ -334,7 +396,7 @@ const handler = createMcpHandler(async (server) => {
       title: cartWidget.title,
       description: "Get the current shopping cart contents and total",
       inputSchema: {},
-      _meta: widgetMeta(cartWidget),
+      _meta: createWidgetMeta(cartWidget),
     },
     async () => {
       const cartItems = Array.from(cart.values());
@@ -358,7 +420,6 @@ const handler = createMcpHandler(async (server) => {
           itemCount: cartItems.length,
           subtotal,
         },
-        _meta: widgetMeta(cartWidget),
       };
     },
   );
@@ -377,7 +438,7 @@ const handler = createMcpHandler(async (server) => {
           .default(1)
           .describe("Quantity to add (default: 1)"),
       },
-      _meta: widgetMeta(cartWidget),
+      _meta: createWidgetMeta(cartWidget),
     },
     async ({ productId, quantity = 1 }) => {
       const product = products.find((p) => p.id === productId);
@@ -426,7 +487,6 @@ const handler = createMcpHandler(async (server) => {
             subtotal,
           },
         },
-        _meta: widgetMeta(cartWidget),
       };
     },
   );
@@ -445,7 +505,7 @@ const handler = createMcpHandler(async (server) => {
           .optional()
           .describe("Quantity to remove (omit to remove all)"),
       },
-      _meta: widgetMeta(cartWidget),
+      _meta: createWidgetMeta(cartWidget),
     },
     async ({ productId, quantity }) => {
       const existingItem = cart.get(productId);
@@ -492,7 +552,6 @@ const handler = createMcpHandler(async (server) => {
             subtotal,
           },
         },
-        _meta: widgetMeta(cartWidget),
       };
     },
   );
@@ -520,7 +579,7 @@ const handler = createMcpHandler(async (server) => {
           .default(3)
           .describe("Number of recommendations (1-5, default: 3)"),
       },
-      _meta: widgetMeta(productsWidget),
+      _meta: createWidgetMeta(productsWidget),
     },
     async ({ productId, category, limit = 3 }) => {
       let recommendations: Product[] = [];
@@ -573,7 +632,6 @@ const handler = createMcpHandler(async (server) => {
               ? `category ${category}`
               : "top rated",
         },
-        _meta: widgetMeta(productsWidget),
       };
     },
   );
@@ -584,7 +642,7 @@ const handler = createMcpHandler(async (server) => {
       title: "Clear Cart",
       description: "Remove all items from the shopping cart",
       inputSchema: {},
-      _meta: widgetMeta(cartWidget),
+      _meta: createWidgetMeta(cartWidget),
     },
     async () => {
       const itemCount = cart.size;
@@ -608,7 +666,6 @@ const handler = createMcpHandler(async (server) => {
             subtotal: 0,
           },
         },
-        _meta: widgetMeta(cartWidget),
       };
     },
   );

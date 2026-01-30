@@ -10,7 +10,8 @@
     "tunnel": "ngrok http 3000"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.20.0",
+    "@mcp-ui/server": "^6.0.0",
+    "@modelcontextprotocol/sdk": "^1.25.3",
     "@shopify/polaris": "^13.9.5",
     "@shopify/polaris-icons": "^9.3.1",
     "framer-motion": "^12.29.0",
@@ -18,7 +19,7 @@
     "next": "15.5.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "zod": "3.24.2"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
