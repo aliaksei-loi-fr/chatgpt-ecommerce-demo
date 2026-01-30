@@ -208,7 +208,10 @@ const handler = createMcpHandler(async (server) => {
           total: filteredProducts.length,
           filters: { category, minPrice, maxPrice, sortBy, limit },
         },
-        _meta: widgetMeta(productsWidget),
+        _meta: {
+          ...widgetMeta(productsWidget),
+          "openai/suppressCitations": true,
+        },
       };
     },
   );
@@ -390,7 +393,10 @@ const handler = createMcpHandler(async (server) => {
             ...new Set(products.map((p) => p.material).filter(Boolean)),
           ],
         },
-        _meta: widgetMeta(searchWidget),
+        _meta: {
+          ...widgetMeta(searchWidget),
+          "openai/suppressCitations": true,
+        },
       };
     },
   );
