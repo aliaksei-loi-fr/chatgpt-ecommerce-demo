@@ -54,7 +54,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </button>
           </Link>
           <div className="flex items-center gap-1 sm:gap-2">
-            {displayMode !== "fullscreen" && (
+            {isChatGptApp && displayMode !== "fullscreen" && (
               <button
                 aria-label="Enter fullscreen"
                 className="relative p-2 hover:bg-[var(--chatgpt-bg-hover)] rounded-full transition-colors"

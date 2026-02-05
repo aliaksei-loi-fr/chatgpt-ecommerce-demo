@@ -71,18 +71,6 @@ export default function Home() {
     });
   };
 
-  const handleCompare = () => {
-    if (isChatGptApp) {
-      startTransition(async () => {
-        await sendMessage("Open compare page with 2 random products");
-      });
-
-      return;
-    }
-
-    router.push("/compare");
-  };
-
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -106,18 +94,19 @@ export default function Home() {
             </p>
           </div>
 
-          <button
-            onClick={handleCompare}
-            disabled={isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors text-sm font-medium self-start sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isPending ? (
-              <span className="block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Icon source={ChartHistogramGrowthIcon} tone="inherit" />
-            )}
-            <span>{isPending ? "Loading..." : "Compare Products"}</span>
-          </button>
+          <Link href={"/compare"}>
+            <button
+              disabled={isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--chatgpt-accent)] text-white rounded-lg hover:bg-[var(--chatgpt-accent-hover)] transition-colors text-sm font-medium self-start sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPending ? (
+                <span className="block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Icon source={ChartHistogramGrowthIcon} tone="inherit" />
+              )}
+              <span>{isPending ? "Loading..." : "Compare Products"}</span>
+            </button>
+          </Link>
         </div>
 
         {hasActiveFilters && (

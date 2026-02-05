@@ -15,7 +15,7 @@ import {
 } from "@/app/hooks";
 import PageLoader from "@/components/page-loader";
 
-interface CompareWidgetProps extends Record<string, unknown> {
+type CompareWidgetProps = {
   products?: Product[];
   insights?: {
     bestValue?: { id: string; name: string };
@@ -23,11 +23,11 @@ interface CompareWidgetProps extends Record<string, unknown> {
     lowestPrice?: { id: string; name: string; price: number };
   };
   priceRange?: { min: number; max: number };
-}
+} & Record<string, unknown>;
 
-interface CompareWidgetState extends Record<string, unknown> {
+type CompareWidgetState = {
   selectedIds: string[];
-}
+} & Record<string, unknown>;
 
 function StarRating({ rating }: { rating: number }) {
   return (

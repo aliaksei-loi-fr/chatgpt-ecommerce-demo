@@ -11,12 +11,12 @@ import { useWidgetProps, useIsChatGptApp, useSendMessage } from "@/app/hooks";
 import { useState } from "react";
 import PageLoader from "@/components/page-loader";
 
-interface CartItem {
+type CartItem = {
   product: Product;
   quantity: number;
-}
+};
 
-interface CartWidgetProps extends Record<string, unknown> {
+type CartWidgetProps = {
   items?: CartItem[];
   itemCount?: number;
   subtotal?: number;
@@ -26,7 +26,7 @@ interface CartWidgetProps extends Record<string, unknown> {
     itemCount: number;
     subtotal: number;
   };
-}
+} & Record<string, unknown>;
 
 export default function CheckoutPage() {
   const isChatGptApp = useIsChatGptApp();

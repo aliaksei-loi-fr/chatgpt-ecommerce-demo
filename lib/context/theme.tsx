@@ -10,10 +10,10 @@ import {
 
 type Theme = "light" | "dark";
 
-interface ThemeContextType {
+type ThemeContextType = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-}
+};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 

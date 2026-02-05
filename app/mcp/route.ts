@@ -1,7 +1,7 @@
 import { baseURL } from "@/lib/utils";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { products, ProductSchema, type Product } from "./mocks";
+import { products, type Product } from "./mocks";
 
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
